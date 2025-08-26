@@ -1,0 +1,119 @@
+---
+alwaysApply: true
+---
+
+# Other rules
+
+always use pnpm, try to avoid using npx and use pnpm dlx instead.
+
+# Cursors AI Development Guidelines for Summario
+
+This document outlines the core rules and conventions for developing the Summario project. Adhering to these guidelines is crucial for maintaining code quality, cownsistency, and a clean architecture. **Read carefully and follow every instruction.**
+
+## 1. Design & Styling (Tailwind CSS & shadcn/ui)
+
+- **Use CSS Variables for Colors:** **ALWAYS** use the semantic CSS variables defined in `app/globals.css` for all color-related styling. Do not hardcode hex values or use default Tailwind color classes directly (e.g., `bg-blue-500`, `text-gray-800`).
+  - **Correct:** `className="bg-primary text-primary-foreground"`
+  - **Incorrect:** `className="bg-[#22D3EE] text-slate-900"`
+  - **Color Palette Reference:**
+    - `--background`: `#0F172A`
+    - `--foreground`: `#F8FAFC`
+    - `--card`: `#1E293B`
+    - `--primary`: `#22D3EE`
+    - `--primary-foreground`: `#0F172A`
+    - `--accent`: `#A3E635`
+    - `--destructive`: `#FB7185`
+    - `--muted`: `#334155`
+    - `--muted-foreground`: `#94A3B8`
+    - `--border`: `#334155`
+- **Component-First with shadcn/ui:** Before creating any custom UI component, check if a suitable, equivalent component exists in `shadcn/ui`. **Prefer shadcn/ui components by default.** Only build custom components for functionality not explicitly covered by shadcn/ui.
+- **Layout with Flexbox & Grid:** Use Tailwind's Flexbox (`flex`, `justify-*`, `items-*`, `gap-*`) and Grid (`grid`, `grid-cols-*`, `gap-*`) utilities for all layout purposes. Avoid floats or older layout techniques.
+- **Responsive Design:** All UI components and pages must be fully responsive and provide an excellent user experience on mobile devices. Utilize Tailwind's responsive prefixes (`sm:`, `md:`, `lg:`) to adapt styles.
+- **Minimalism & Usability:** Focus on a clean, minimal design. Avoid unnecessary animations or complex visual elements. The primary goal is excellent usability and clarity.
+
+## 2. Next.js & React Architecture
+
+- **App Router First:** All new pages, API routes, and components must reside within the Next.js App Router (`/app` directory).
+- **Server Components by Default:** React Server Components (RSCs) are the default. Strive to use RSCs for data fetching, server-side logic, and rendering static or mostly static content.
+- **Client Components (Strict Use):** Only add the `"use client"` directive when client-side interactivity (e.g., `useState`, `useEffect`, event handlers like `onClick`, browser APIs) is _absolutely necessary_. Minimize the client-side bundle size.
+- **State Management:** For V1, rely exclusively on React's built-in hooks (`useState`, `useReducer`, `useContext`). Do not introduce or install external state management libraries (e.g., Redux, Zustand).
+- **File Naming Conventions:**
+  - Directories: `kebab-case` (e.g., `/meeting-setup`).
+  - React Components: `PascalCase` (e.g., `ReviewProtocolView.tsx`).
+  - API Routes: `route.ts`.
+  - Pages: `page.tsx`.
+
+## 3. Supabase & Data Management
+
+- **Official Supabase JS Client:** All interactions with the Supabase database must use the official `@supabase/ssr` or `@supabase/auth-helpers-nextjs` libraries.
+- **Server-Side Mutations:** All database write operations (INSERT, UPDATE, DELETE) **must** be performed in server-side API Routes or Server Actions to protect your Supabase service role key and ensure security. **Never** perform database mutations directly from a client component.
+- **Row-Level Security (RLS):** Ensure that Row-Level Security policies are correctly enabled and configured on all Supabase tables (`public.users`, `public.meetings`). Policies must restrict data access and modification so that users can only view or modify their own data.
+- **Environment Variables:** All Supabase URL/keys and other sensitive configuration must be stored in `.env.local` and accessed using `process.env`. These files must not be committed to version control.
+
+## 4. API & Backend Logic
+
+- **Clear API Contracts:** For every API route, include a TypeScript interface or type definition (or clear comments describing the shape) for both the expected request body and the successful response object.
+- **Graceful Error Handling:** All API endpoints **must** include robust `try...catch` blocks. On failure, return a meaningful error message (e.g., `message: string`) and an appropriate HTTP status code (e.g., `400 Bad Request` for invalid input, `401 Unauthorized`, `404 Not Found`, `500 Internal Server Error`).
+- **Asynchronous Operations:** Utilize `async/await` syntax for all asynchronous code. When triggering long-running processes (like AI summary generation from a webhook), ensure the initial request (e.g., the webhook handler) returns an immediate, non-blocking response.
+
+## 5. Code Quality & TypeScript
+
+- **Strict TypeScript:** Use TypeScript for all files. Avoid the `any` type at all costs. Define clear interfaces or types for API request/response bodies, database schemas, and component props.
+- **Code Comments (Why, not What):** Do not write comments explaining _what_ a piece of code does if it's obvious (e.g., `// This is a loop`). Instead, explain _why_ specific architectural decisions were made, _why_ a complex piece of logic is necessary, or document any non-obvious behavior, edge cases, or workarounds.
+- **ESLint & Prettier:** Adhere to the default ESLint and Prettier configurations provided by Next.js. Ensure code is consistently formatted and adheres to linting rules.
+
+# Cursors AI Development Guidelines for Summario
+
+This document outlines the core rules and conventions for developing the Summario project. Adhering to these guidelines is crucial for maintaining code quality, consistency, and a clean architecture. **Read carefully and follow every instruction.**
+
+## 1. Design & Styling (Tailwind CSS & shadcn/ui)
+
+- **Use CSS Variables for Colors:** **ALWAYS** use the semantic CSS variables defined in `app/globals.css` for all color-related styling. Do not hardcode hex values or use default Tailwind color classes directly (e.g., `bg-blue-500`, `text-gray-800`).
+  - **Correct:** `className="bg-primary text-primary-foreground"`
+  - **Incorrect:** `className="bg-[#22D3EE] text-slate-900"`
+  - **Color Palette Reference:**
+    - `--background`: `#0F172A`
+    - `--foreground`: `#F8FAFC`
+    - `--card`: `#1E293B`
+    - `--primary`: `#22D3EE`
+    - `--primary-foreground`: `#0F172A`
+    - `--accent`: `#A3E635`
+    - `--destructive`: `#FB7185`
+    - `--muted`: `#334155`
+    - `--muted-foreground`: `#94A3B8`
+    - `--border`: `#334155`
+- **Component-First with shadcn/ui:** Before creating any custom UI component, check if a suitable, equivalent component exists in `shadcn/ui`. **Prefer shadcn/ui components by default.** Only build custom components for functionality not explicitly covered by shadcn/ui.
+- **Layout with Flexbox & Grid:** Use Tailwind's Flexbox (`flex`, `justify-*`, `items-*`, `gap-*`) and Grid (`grid`, `grid-cols-*`, `gap-*`) utilities for all layout purposes. Avoid floats or older layout techniques.
+- **Responsive Design:** All UI components and pages must be fully responsive and provide an excellent user experience on mobile devices. Utilize Tailwind's responsive prefixes (`sm:`, `md:`, `lg:`) to adapt styles.
+- **Minimalism & Usability:** Focus on a clean, minimal design. Avoid unnecessary animations or complex visual elements. The primary goal is excellent usability and clarity.
+
+## 2. Next.js & React Architecture
+
+- **App Router First:** All new pages, API routes, and components must reside within the Next.js App Router (`/app` directory).
+- **Server Components by Default:** React Server Components (RSCs) are the default. Strive to use RSCs for data fetching, server-side logic, and rendering static or mostly static content.
+- **Client Components (Strict Use):** Only add the `"use client"` directive when client-side interactivity (e.g., `useState`, `useEffect`, event handlers like `onClick`, browser APIs) is _absolutely necessary_. Minimize the client-side bundle size.
+- **State Management:** For V1, rely exclusively on React's built-in hooks (`useState`, `useReducer`, `useContext`). Do not introduce or install external state management libraries (e.g., Redux, Zustand).
+- **File Naming Conventions:**
+  - Directories: `kebab-case` (e.g., `/meeting-setup`).
+  - React Components: `PascalCase` (e.g., `ReviewProtocolView.tsx`).
+  - API Routes: `route.ts`.
+  - Pages: `page.tsx`.
+
+## 3. Supabase & Data Management
+
+- **Official Supabase JS Client:** All interactions with the Supabase database must use the official `@supabase/ssr` or `@supabase/auth-helpers-nextjs` libraries.
+- **Server-Side Mutations:** All database write operations (INSERT, UPDATE, DELETE) **must** be performed in server-side API Routes or Server Actions to protect your Supabase service role key and ensure security. **Never** perform database mutations directly from a client component.
+- **Row-Level Security (RLS):** Ensure that Row-Level Security policies are correctly enabled and configured on all Supabase tables (`public.users`, `public.meetings`). Policies must restrict data access and modification so that users can only view or modify their own data.
+- **Environment Variables:** All Supabase URL/keys and other sensitive configuration must be stored in `.env.local` and accessed using `process.env`. These files must not be committed to version control.
+
+## 4. API & Backend Logic
+
+- **Clear API Contracts:** For every API route, include a TypeScript interface or type definition (or clear comments describing the shape) for both the expected request body and the successful response object.
+- **Graceful Error Handling:** All API endpoints **must** include robust `try...catch` blocks. On failure, return a meaningful error message (e.g., `message: string`) and an appropriate HTTP status code (e.g., `400 Bad Request` for invalid input, `401 Unauthorized`, `404 Not Found`, `500 Internal Server Error`).
+- **Asynchronous Operations:** Utilize `async/await` syntax for all asynchronous code. When triggering long-running processes (like AI summary generation from a webhook), ensure the initial request (e.g., the webhook handler) returns an immediate, non-blocking response.
+
+## 5. Code Quality & TypeScript
+
+- **Strict TypeScript:** Use TypeScript for all files. Avoid the `any` type at all costs. Define clear interfaces or types for API request/response bodies, database schemas, and component props.
+- **Code Comments (Why, not What):** Do not write comments explaining _what_ a piece of code does if it's obvious (e.g., `// This is a loop`). Instead, explain _why_ specific architectural decisions were made, _why_ a complex piece of logic is necessary, or document any non-obvious behavior, edge cases, or workarounds.
+- **ESLint & Prettier:** Adhere to the default ESLint and Prettier configurations provided by Next.js. Ensure code is consistently formatted and adheres to linting rules.
