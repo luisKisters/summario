@@ -93,7 +93,6 @@ export async function POST(request: NextRequest) {
       meeting_url: meeting_url,
       bot_name: "Summario Bot",
       webhook_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/meeting-callback`,
-      // webhook_url: `https://webhook.site/94c4fad2-9522-4b8e-9349-03b752ae127c`,
       //   lang: "en", // Default to English for V1
       //   video: false, // Default to false for V1
       //   profanity_filter: false, // Default to false for V1
@@ -106,7 +105,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Make the POST request to the Skribby API
-    console.log("Skribby Payload: ", skribbyPayload);
     const skribbyResponse = await fetch(
       "https://platform.skribby.io/api/v1/bot",
       {
@@ -133,7 +131,6 @@ export async function POST(request: NextRequest) {
     }
 
     const skribbyBot = await skribbyResponse.json();
-    console.log("skribbyResponse: ", skribbyBot);
     const skribbyBotId = skribbyBot.id;
 
     // Insert a new row into the 'public.meetings' table in Supabase
