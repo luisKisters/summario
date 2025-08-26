@@ -14,8 +14,10 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("example_protocol, ai_generated_prompt, ai_generated_template")
-    .eq("id", user!.id)
+    .select(
+      "example_protocol, ai_generated_prompt, ai_generated_template, instructions"
+    )
+    .eq("user_id", user!.id)
     .single();
 
   return (
@@ -27,6 +29,7 @@ export default async function SettingsPage() {
         initialExampleProtocol={profile?.example_protocol ?? ""}
         initialAiPrompt={profile?.ai_generated_prompt ?? ""}
         initialAiTemplate={profile?.ai_generated_template ?? ""}
+        initialInstructions={profile?.instructions ?? ""}
       />
     </div>
   );

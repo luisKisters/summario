@@ -6,26 +6,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { GenerateTemplateResponse } from "@/types";
+import { useRouter } from "next/navigation";
 
 type SettingsFormProps = {
   initialExampleProtocol: string;
   initialAiPrompt: string;
   initialAiTemplate: string;
+  initialInstructions: string;
 };
 
 export default function SettingsForm({
   initialExampleProtocol,
   initialAiPrompt,
   initialAiTemplate,
+  initialInstructions,
 }: SettingsFormProps) {
   const [exampleProtocol, setExampleProtocol] = useState(
     initialExampleProtocol
   );
   const [aiPrompt, setAiPrompt] = useState(initialAiPrompt);
   const [aiTemplate, setAiTemplate] = useState(initialAiTemplate);
-  const [userInstructions, setUserInstructions] = useState("");
+  const [userInstructions, setUserInstructions] = useState(initialInstructions);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   const handleGenerateTemplate = async () => {
     if (!exampleProtocol.trim()) return;
@@ -199,9 +203,17 @@ export default function SettingsForm({
               type="button"
               onClick={handleSaveSettings}
               disabled={isSaving}
-              className="w-full bg-primary text-primary-foreground hover:opacity-90"
+              className="w-full"
             >
               {isSaving ? "Saving..." : "Save Settings"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/dashboard")}
+              className="w-full"
+            >
+              Go to Dashboard
             </Button>
           </CardContent>
         </Card>
