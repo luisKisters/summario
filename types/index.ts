@@ -28,6 +28,7 @@ export interface Meeting {
   meeting_url: string;
   agenda_topics: AgendaTopic[];
   status: MeetingStatus;
+  scheduled_start_datetime?: string; // ISO 8601 format for scheduled meetings
   raw_transcript?: string;
   structured_protocol?: StructuredProtocol;
   error_message?: string;

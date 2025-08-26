@@ -66,3 +66,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide native time input spinners and picker icon across browsers while keeping type=time */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+input[type="time"]::-webkit-clear-button,
+input[type="time"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-outer-spin-button {
+  display: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type="time"] {
+  -moz-appearance: textfield;
+}
+/* Edge/Chromium additional */
+input[type="time"]::-ms-clear,
+input[type="time"]::-ms-reveal {
+  display: none;
+}
