@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 // Minimal typing for Skribby webhook payload based on Bot schema
 interface SkribbyWebhookPayload {
@@ -11,20 +11,14 @@ interface SkribbyWebhookPayload {
 
 function mapSkribbyStatusToMeetingStatus(
   status: string | undefined
-):
-  | "JOINING"
-  | "RECORDING"
-  | "PROCESSING"
-  | "SUMMARIZED"
-  | "FAILED"
-  | undefined {
+): "JOINING" | "RECORDING" | "PROCESSING" | "DONE" | "FAILED" | undefined {
   if (!status) return undefined;
   const normalized = status.toLowerCase();
   if (normalized === "joining") return "JOINING";
   if (normalized === "recording") return "RECORDING";
   if (normalized === "processing" || normalized === "transcribing")
     return "PROCESSING";
-  if (normalized === "finished") return "SUMMARIZED"; // We will trigger generation and eventually become SUMMARIZED
+  if (normalized === "finished") return "DONE"; // We will trigger generation and eventually become SUMMARIZED
   if (
     normalized === "failed" ||
     normalized === "not_admitted" ||
@@ -50,18 +44,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = getAdminClient();
 
+    console.log("skribbyBotId (from payload):", skribbyBotId);
     // Find meeting by skribby_bot_id
     const { data: meeting, error: findError } = await supabase
       .from("meetings")
-      .select("id, status")
+      .select("meeting_id, status")
       .eq("skribby_bot_id", skribbyBotId)
       .single();
 
+    if (findError) {
+      console.error("Error finding meeting: ", findError);
+    }
+
     if (findError || !meeting) {
       return NextResponse.json(
-        { status: "received", note: "meeting not found" },
+        {
+          status: "received",
+          note: "meeting not found or other error occured (check logs)",
+        },
         { status: 200 }
       );
     }
@@ -69,21 +71,26 @@ export async function POST(request: NextRequest) {
     const newStatusRaw = payload?.data?.new_status;
     const mappedStatus = mapSkribbyStatusToMeetingStatus(newStatusRaw);
 
-    // Build update object
-    const update: Record<string, unknown> = {};
-    if (mappedStatus && mappedStatus !== "SUMMARIZED") {
-      // Do not mark as SUMMARIZED here; generation will do that
-      update.status = mappedStatus;
-    }
-
     // TODO: Add error handling
     // // On failure-like statuses, store error message if present
     // if (mappedStatus === "FAILED" && payload.message) {
     //   update.error_message = payload.message;
     // }
 
-    if (Object.keys(update).length > 0) {
-      await supabase.from("meetings").update(update).eq("id", meeting.id);
+    // if (Object.keys(update).length > 0) {
+    //   await supabase.from("meetings").update(update).eq("id", meeting.id);
+    // }
+    const { error: supabaseError } = await supabase
+      .from("meetings")
+      .update({ status: mappedStatus })
+      .eq("meeting_id", meeting.meeting_id);
+
+    if (supabaseError) {
+      console.error("Error updating supabase meeting status");
+      return NextResponse.json({
+        status: 500,
+        message: "Error updating supabase meeting status",
+      });
     }
 
     // Fire-and-forget summary generation after persisting transcript
@@ -93,7 +100,7 @@ export async function POST(request: NextRequest) {
         fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/generate-summary`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ meeting_id: meeting.id }),
+          body: JSON.stringify({ meeting_id: meeting.meeting_id }),
         }).catch(() => {});
       } catch {
         // ignore

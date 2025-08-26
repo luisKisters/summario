@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  // Allow public webhooks/internal callbacks that must not require auth
-  if (request.nextUrl.pathname.startsWith("/api/meeting-callback")) {
+  // Allow all API routes (server-to-server, webhooks, internal calls) to pass without auth redirect
+  if (request.nextUrl.pathname.startsWith("/api")) {
     return NextResponse.next({ request });
   }
 
