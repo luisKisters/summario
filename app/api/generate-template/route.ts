@@ -25,71 +25,66 @@ export async function POST(request: NextRequest) {
     }
 
     // Construct the meta-prompt for Gemini to act as a prompt engineer
-    let metaPrompt = `You are an expert prompt engineer specializing in meeting protocol generation. Your task is to analyze the provided example protocol and create two outputs:
+    let metaPrompt = `You are a world-class prompt engineering system. Your mission is to deconstruct a user-provided example of a meeting protocol and generate a high-fidelity, reusable AI configuration (a system prompt and a template) from it. This configuration will be used by another AI to generate future protocols in the exact same style.
 
-1. A detailed system prompt for generating future protocols
-2. A template with placeholders for dynamic content
-
-ANALYZE THE FOLLOWING EXAMPLE PROTOCOL:
-${example_protocol}`;
+  ---
+  **INPUT PROTOCOL EXAMPLE:**
+  ${example_protocol}
+  ---`;
 
     // Add user instructions if provided
     if (user_instructions && user_instructions.trim()) {
       metaPrompt += `
-
-USER-SPECIFIC INSTRUCTIONS & CONTEXT:
-${user_instructions.trim()}
-
-Please incorporate these instructions into your analysis and template generation.`;
+  ---
+  **ADDITIONAL USER INSTRUCTIONS:**
+  ${user_instructions.trim()}
+  ---`;
     }
 
     metaPrompt += `
 
-Based on this example, identify and extract:
+  Your task is to follow this two-step process meticulously:
 
-**Writing Style Analysis:**
-- Overall tone (formal, informal, journalistic, report-like)
-- Language complexity and vocabulary level
-- Sentence structure patterns
+  **Step 1: Deep Analysis**
+  First, perform a deep analysis of the provided example. Internally, identify the following patterns:
+  -   **Tone & Style:** Is it formal, informal, technical, decisive? What is the vocabulary and sentence structure? The language of the final prompt must match the language of this example.
+  -   **Data Extraction:** Identify all dynamic data points (e.g., meeting title, date, list of participants).
+  -   **Structural Formatting:** Deconstruct the exact markdown structure. Note the use of headers, tables, bold/italic emphasis, blockquotes, and lists. Pay special attention to how action items and decisions are formatted.
+  -   **Repeating Elements:** Identify elements that appear in a list, such as participants and agenda points. This is crucial for the template.
 
-**Formatting Rules:**
-- How decisions are presented (e.g., bolded, bulleted, in tables)
-- How action items are structured (columns, format, details)
-- How speaker names are handled (prefixes, formatting)
-- Section organization and hierarchy
-- Use of markdown elements (tables, lists, headers, emphasis)
+  **Step 2: Generate the Configuration**
+  Using your analysis, you will construct the two required outputs.
 
-**Dynamic Elements:**
-- Date and time formatting
-- Participant information structure
-- Meeting title conventions
-- Agenda topic handling
-- Any recurring patterns or placeholders
+  **Output 1: \`ai_generated_prompt\` - The System Prompt**
+  This is not just a summary of the style; it is a direct, actionable set of instructions for another AI. It must be comprehensive and clear.
+  -   **Persona:** It must start by giving the next AI a clear persona (e.g., "You are an expert executive assistant...").
+  -   **Goal:** It must state the primary goal (e.g., "...your task is to convert a raw meeting transcript into a structured protocol...").
+  -   **Key Rules:** It must include a "Key Rules" section with specific, bullet-pointed instructions derived from your analysis. Examples:
+      -   "The tone must be formal and concise."
+      -   "All decisions must be prefixed with 'DECISION:' and rendered in bold."
+  -   **Handling Variable Items (CRITICAL):** The prompt MUST include a rule explaining how to handle a variable number of agenda items with the fixed number of placeholders in the template. For example: "The template provides a fixed number of placeholders (e.g., AGENDA_TOPIC_1, AGENDA_TOPIC_2). Fill these sequentially. If you are given fewer items than placeholders, you MUST omit the unused placeholder sections entirely from the final output. If you are given more items, you MUST replicate the formatting of the last placeholder for each additional item."
 
-**Content Structure:**
-- How different types of information are categorized
-- What gets emphasized vs. what's summarized
-- How conclusions and next steps are presented
+  **Output 2: \`ai_generated_template\` - The Structural Template**
+  This is the most critical part. The template must be a **structurally identical replica** of the example protocol, with only the specific data values replaced by placeholders.
+  -   **Placeholder Convention:**
+      -   For single values, use \`{{PLACEHOLDER_NAME}}\` (e.g., \`{{MEETING_TITLE}}\`, \`{{DATE}}\`).
+      -   For lists of items (like participants or agenda topics), generate **exactly three** numbered placeholders to establish the pattern (e.g., \`{{AGENDA_TOPIC_1}}\`, \`{{AGENDA_TOPIC_2}}\`, \`{{AGENDA_TOPIC_3}}\`). This ensures the AI understands the repeatable structure.
+  -   **Absolute Preservation:** You MUST preserve ALL markdown formatting, including headers, tables, lists, whitespace, and any static text or punctuation. DO NOT add, remove, or alter the structure. The template should be a direct copy of the example with only the specific data replaced by these placeholders.
 
-**CRITICAL INSTRUCTIONS FOR TEMPLATE GENERATION:**
-- The number of agenda items is NOT fixed - it can vary between meetings
-- STRICTLY PRESERVE the exact format and structure of the example protocol
-- DO NOT modify, add, or remove any formatting elements (tables, lists, headers, etc.)
-- ONLY replace specific data content with placeholders like {{MEETING_TITLE}}, {{DATE}}, {{PARTICIPANTS}}, {{AGENDA_TOPIC_1}}, {{AGENDA_TOPIC_2}}, etc.
-- Remove inserted data, inserted topics, inserted participants, etc. and replace with appropriate placeholders
-- Keep all markdown formatting, table structures, bullet points, and organizational elements exactly as they appear
-- The template should be a direct copy of the example with only data replaced by placeholders
+  ---
+  **FINAL OUTPUT INSTRUCTIONS:**
+  Respond with **ONLY a valid JSON object** containing exactly two keys: "ai_generated_prompt" and "ai_generated_template". Do not include any other text, explanations, or markdown formatting around the JSON.
 
-RESPOND WITH ONLY A JSON OBJECT:
-{
-  "ai_generated_prompt": "A detailed system prompt that instructs an AI how to generate protocols in this exact style and format. Include specific formatting rules, tone requirements, and structural guidelines. Emphasize that the number of agenda items can vary and should be handled dynamically.",
-  "ai_generated_template": "A template that is an EXACT copy of the example protocol structure, with only specific data replaced by placeholders (e.g., {{MEETING_TITLE}}, {{DATE}}, {{PARTICIPANTS}}, {{AGENDA_TOPIC_1}}, {{AGENDA_TOPIC_2}}). Preserve ALL formatting, tables, lists, and structure exactly as shown."
-}
-
-Ensure the response is valid JSON and contains exactly these two keys.`;
-
+  **EXAMPLE OF A PERFECT RESPONSE:**
+  \`\`\`json
+  {
+    "ai_generated_prompt": "You are a professional meeting secretary. Your sole task is to accurately populate the provided template with information extracted from a meeting transcript. The final output must be a single, complete markdown document.\\n\\n**Key Rules:**\\n- The tone must be formal and direct.\\n- All key decisions must be rendered in **bold**.\\n- **Handling Agenda Items:** The template provides placeholders for 3 agenda topics. You must fill these sequentially based on the topics provided to you. If you receive fewer than 3 topics, you must delete the unused sections (e.g., if you only have 2 topics, the entire section for AGENDA_TOPIC_3 should be removed from the final output). If you receive more than 3 topics, you must repeat the exact markdown structure of the AGENDA_TOPIC_3 section for all additional topics.",
+    "ai_generated_template": "# Meeting Protocol: {{MEETING_TITLE}}\\n\\n**Date:** {{DATE}}\\n\\n**Participants:**\\n- {{PARTICIPANT_1}}\\n- {{PARTICIPANT_2}}\\n- {{PARTICIPANT_3}}\\n\\n---\\n\\n## {{AGENDA_TOPIC_1.TITLE}}\\n\\n**Summary:**\\n{{AGENDA_TOPIC_1.SUMMARY}}\\n\\n---\\n\\n## {{AGENDA_TOPIC_2.TITLE}}\\n\\n**Summary:**\\n{{AGENDA_TOPIC_2.SUMMARY}}\\n\\n---\\n\\n## {{AGENDA_TOPIC_3.TITLE}}\\n\\n**Summary:**\\n{{AGENDA_TOPIC_3.SUMMARY}}"
+  }
+  \`\`\`
+  `;
     // Generate content using Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     const result = await model.generateContent(metaPrompt);
     const response = await result.response;
