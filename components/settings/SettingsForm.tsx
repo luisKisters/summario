@@ -210,7 +210,7 @@ export default function SettingsForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/meetings")}
               className="w-full"
             >
               Go to Dashboard
