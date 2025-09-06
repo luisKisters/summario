@@ -133,6 +133,11 @@ export async function POST(request: NextRequest) {
     const skribbyBot = await skribbyResponse.json();
     const skribbyBotId = skribbyBot.id;
 
+    const agendaTopicsWithIds = agenda_topics.map((topic, index) => ({
+      ...topic,
+      id: index.toString(),
+    }));
+
     // Insert a new row into the 'public.meetings' table in Supabase
     const { data: meeting, error: insertError } = await supabase
       .from("meetings")
@@ -140,7 +145,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         skribby_bot_id: skribbyBotId,
         meeting_url: meeting_url,
-        agenda_topics: agenda_topics,
+        agenda_topics: agendaTopicsWithIds,
         status: start_time_option === "scheduled" ? "SCHEDULED" : "INITIALIZED",
         scheduled_start_datetime:
           start_time_option === "scheduled" ? scheduled_start_datetime : null,
