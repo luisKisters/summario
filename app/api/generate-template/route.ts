@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { GenerateTemplateRequest, GenerateTemplateResponse } from "@/types";
 
 // Initialize Gemini AI client
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
+const ai = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_GEMINI_API_KEY!,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,11 +86,30 @@ export async function POST(request: NextRequest) {
   \`\`\`
   `;
     // Generate content using Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: metaPrompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            ai_generated_prompt: {
+              type: Type.STRING,
+            },
+            ai_generated_template: {
+              type: Type.STRING,
+            },
+          },
+        },
+      },
+    });
 
-    const result = await model.generateContent(metaPrompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = response.text;
+
+    if (!text) {
+      throw new Error("No response text received from Gemini");
+    }
 
     // Try to parse the JSON response
     let parsedResponse: Partial<GenerateTemplateResponse>;
