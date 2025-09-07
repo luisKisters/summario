@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 // Types for the API request and response
 interface CreateMeetingRequest {
+  meeting_name: string;
   meeting_url: string;
   agenda_topics: Array<{ topic: string; details?: string }>;
   start_time_option: "now" | "scheduled";
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateMeetingRequest = await request.json();
     const {
+      meeting_name,
       meeting_url,
       agenda_topics,
       start_time_option,
@@ -39,11 +41,16 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!meeting_url || !agenda_topics || !start_time_option) {
+    if (
+      !meeting_name ||
+      !meeting_url ||
+      !agenda_topics ||
+      !start_time_option
+    ) {
       return NextResponse.json(
         {
           error:
-            "meeting_url, agenda_topics, and start_time_option are required",
+            "meeting_name, meeting_url, agenda_topics, and start_time_option are required",
         },
         { status: 400 }
       );
@@ -139,6 +146,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         skribby_bot_id: skribbyBotId,
+        meeting_name: meeting_name,
         meeting_url: meeting_url,
         agenda_topics: agendaTopicsWithIds,
         status: start_time_option === "scheduled" ? "SCHEDULED" : "INITIALIZED",

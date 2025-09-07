@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { GenerateTemplateResponse } from "@/types";
+import { Tables, TablesUpdate } from "@/types/database.types";
 import { useRouter } from "next/navigation";
 
 type SettingsFormProps = {
@@ -52,9 +52,12 @@ export default function SettingsForm({
         throw new Error(errorData.error || "Failed to generate template");
       }
 
-      const data: GenerateTemplateResponse = await response.json();
-      setAiPrompt(data.ai_generated_prompt);
-      setAiTemplate(data.ai_generated_template);
+      const data: Pick<
+        Tables<"users">,
+        "ai_generated_prompt" | "ai_generated_template"
+      > = await response.json();
+      setAiPrompt(data.ai_generated_prompt ?? "");
+      setAiTemplate(data.ai_generated_template ?? "");
     } catch (error) {
       console.error("Error generating template:", error);
       alert(
@@ -77,13 +80,16 @@ export default function SettingsForm({
         throw new Error("User not authenticated");
       }
 
+      const updateData: TablesUpdate<"users"> = {
+        example_protocol: exampleProtocol,
+        ai_generated_prompt: aiPrompt,
+        ai_generated_template: aiTemplate,
+        instructions: userInstructions,
+      };
+
       const { error } = await supabase
         .from("users")
-        .update({
-          example_protocol: exampleProtocol,
-          ai_generated_prompt: aiPrompt,
-          ai_generated_template: aiTemplate,
-        })
+        .update(updateData)
         .eq("user_id", user.id);
 
       if (error) {

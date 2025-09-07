@@ -2,6 +2,154 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .prose {
+    color: hsl(var(--foreground));
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    color: hsl(var(--foreground));
+  }
+
+  .prose p {
+    color: hsl(var(--foreground));
+  }
+
+  .prose strong {
+    color: hsl(var(--foreground));
+  }
+
+  .prose code {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .prose pre {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .prose pre code {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+  }
+
+  .prose blockquote {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .prose ul,
+  .prose ol {
+    color: hsl(var(--foreground));
+  }
+
+  .prose li {
+    color: hsl(var(--foreground));
+  }
+
+  .prose a {
+    color: hsl(var(--primary));
+  }
+
+  .prose table {
+    color: hsl(var(--foreground));
+  }
+
+  .prose th {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .prose td {
+    color: hsl(var(--foreground));
+  }
+
+  .prose thead th {
+    color: hsl(var(--foreground));
+  }
+
+  .prose tbody td {
+    color: hsl(var(--foreground));
+  }
+
+  /* Ensure prose-invert works properly */
+  .prose-invert .prose {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose h1,
+  .prose-invert .prose h2,
+  .prose-invert .prose h3,
+  .prose-invert .prose h4,
+  .prose-invert .prose h5,
+  .prose-invert .prose h6 {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose p {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose strong {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose code {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose pre {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose pre code {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose blockquote {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .prose-invert .prose ul,
+  .prose-invert .prose ol,
+  .prose-invert .prose li {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose a {
+    color: hsl(var(--primary));
+  }
+
+  .prose-invert .prose table {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose th {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose td {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose thead th {
+    color: hsl(var(--foreground));
+  }
+
+  .prose-invert .prose tbody td {
+    color: hsl(var(--foreground));
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

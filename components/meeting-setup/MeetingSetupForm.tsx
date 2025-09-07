@@ -22,6 +22,7 @@ export function MeetingSetupForm() {
   const router = useRouter();
 
   // Form state
+  const [meetingName, setMeetingName] = useState("");
   const [meetingUrl, setMeetingUrl] = useState("");
   const [agendaTopics, setAgendaTopics] = useState<AgendaTopic[]>([
     { topic: "", details: "" },
@@ -65,6 +66,9 @@ export function MeetingSetupForm() {
 
     try {
       // Validate form
+      if (!meetingName.trim()) {
+        throw new Error("Meeting name is required");
+      }
       if (!meetingUrl.trim()) {
         throw new Error("Meeting URL is required");
       }
@@ -84,6 +88,7 @@ export function MeetingSetupForm() {
 
       // Prepare request body
       const requestBody: any = {
+        meeting_name: meetingName.trim(),
         meeting_url: meetingUrl.trim(),
         agenda_topics: validAgendaTopics,
         start_time_option: joinTimeOption,
@@ -131,6 +136,17 @@ export function MeetingSetupForm() {
           <CardTitle>Meeting Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="meeting-name">Meeting Name</Label>
+            <Input
+              id="meeting-name"
+              type="text"
+              placeholder="e.g. Q3 Planning"
+              value={meetingName}
+              onChange={(e) => setMeetingName(e.target.value)}
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="meeting-url">Meeting URL</Label>
             <Input

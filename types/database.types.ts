@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           meeting_id: string
+          meeting_name: string | null
           meeting_url: string
           participants: Json | null
           raw_transcript: string | null
@@ -35,6 +36,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           meeting_id?: string
+          meeting_name?: string | null
           meeting_url: string
           participants?: Json | null
           raw_transcript?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           meeting_id?: string
+          meeting_name?: string | null
           meeting_url?: string
           participants?: Json | null
           raw_transcript?: string | null

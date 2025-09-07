@@ -42,7 +42,7 @@ export default async function MeetingsPage() {
             <Link href={`/summary/${meeting.meeting_id}`} key={meeting.meeting_id} className="block">
               <Card className="h-full flex flex-col justify-between hover:border-primary transition-colors duration-200">
                 <CardHeader>
-                  <CardTitle className="text-lg truncate" title={meeting.meeting_url}>{meeting.meeting_url}</CardTitle>
+                  <CardTitle className="text-lg truncate" title={meeting.meeting_name || meeting.meeting_url}>{meeting.meeting_name || meeting.meeting_url}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground">
