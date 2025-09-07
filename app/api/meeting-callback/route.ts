@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { Tables, TablesUpdate } from "@/types/database.types";
 
 // Add message for FAILED status
 interface SkribbyWebhookPayload {
@@ -11,7 +12,7 @@ interface SkribbyWebhookPayload {
 
 function mapSkribbyStatusToMeetingStatus(
   status: string | undefined
-): "JOINING" | "RECORDING" | "PROCESSING" | "DONE" | "FAILED" | undefined {
+): Tables<"meetings">["status"] | undefined {
   if (!status) return undefined;
   const normalized = status.toLowerCase();
   if (normalized === "joining") return "JOINING";
@@ -49,10 +50,14 @@ export async function POST(request: NextRequest) {
       .from("meetings")
       .select("meeting_id, status")
       .eq("skribby_bot_id", skribbyBotId)
-      .single();
+      .single<Pick<Tables<"meetings">, "meeting_id" | "status">>();
 
     if (findError || !meeting) {
-      console.error("Error finding meeting by skribby_bot_id:", skribbyBotId, findError);
+      console.error(
+        "Error finding meeting by skribby_bot_id:",
+        skribbyBotId,
+        findError
+      );
       return NextResponse.json(
         {
           status: "received",
@@ -66,17 +71,20 @@ export async function POST(request: NextRequest) {
     const mappedStatus = mapSkribbyStatusToMeetingStatus(newStatusRaw);
 
     if (!mappedStatus) {
-        console.log(`Ignoring unhandled status: ${newStatusRaw}`);
-        return NextResponse.json({ status: "received", note: "unhandled status" });
+      console.log(`Ignoring unhandled status: ${newStatusRaw}`);
+      return NextResponse.json({
+        status: "received",
+        note: "unhandled status",
+      });
     }
 
     if (mappedStatus === "DONE") {
       // set_transcript will update status to DONE or FAILED
       await set_transcript(skribbyBotId, meeting.meeting_id);
+    } else {
+      // For JOINING, RECORDING, PROCESSING, FAILED
+      const updateQuery: TablesUpdate<"meetings"> = { status: mappedStatus };
 
-    } else { // For JOINING, RECORDING, PROCESSING, FAILED
-      const updateQuery: { status: string; error_message?: string } = { status: mappedStatus };
-      
       // On failure-like statuses, store error message if present
       if (mappedStatus === "FAILED" && payload.message) {
         updateQuery.error_message = payload.message;
@@ -97,7 +105,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error processing Skribby callback:", error);
     // Still acknowledge per PRD
-    return NextResponse.json({ status: "received", note: "internal server error" }, { status: 200 });
+    return NextResponse.json(
+      { status: "received", note: "internal server error" },
+      { status: 200 }
+    );
   }
 }
 
@@ -156,13 +167,21 @@ async function set_transcript(bot_id: string, meeting_id: string) {
     );
 
     if (!generateSummaryResponse.ok) {
-        const errorJson = await generateSummaryResponse.json().catch(() => ({ message: 'Failed to parse error response' }));
-        throw new Error(`Failed to trigger summary generation: ${errorJson.message || 'Unknown error'}`);
+      const errorJson = await generateSummaryResponse
+        .json()
+        .catch(() => ({ message: "Failed to parse error response" }));
+      throw new Error(
+        `Failed to trigger summary generation: ${
+          errorJson.message || "Unknown error"
+        }`
+      );
     }
-
   } catch (error) {
     console.error("Error in set_transcript:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error in set_transcript";
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unknown error in set_transcript";
     const { error: dbError } = await supabase
       .from("meetings")
       .update({
@@ -170,9 +189,9 @@ async function set_transcript(bot_id: string, meeting_id: string) {
         error_message: errorMessage,
       })
       .eq("skribby_bot_id", bot_id);
-    
+
     if (dbError) {
-        console.error("Error updating meeting to FAILED status:", dbError);
+      console.error("Error updating meeting to FAILED status:", dbError);
     }
   }
 }

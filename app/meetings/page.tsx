@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Tables } from '@/types/database.types';
 
 export default async function MeetingsPage() {
   const supabase = await createClient();
@@ -37,7 +38,7 @@ export default async function MeetingsPage() {
       </div>
       {meetings && meetings.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {meetings.map((meeting) => (
+          {meetings.map((meeting: Tables<'meetings'>) => (
             <Link href={`/summary/${meeting.meeting_id}`} key={meeting.meeting_id} className="block">
               <Card className="h-full flex flex-col justify-between hover:border-primary transition-colors duration-200">
                 <CardHeader>

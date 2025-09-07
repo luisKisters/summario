@@ -9,11 +9,6 @@ interface CreateMeetingRequest {
   scheduled_start_datetime?: string; // ISO 8601 format
 }
 
-interface CreateMeetingResponse {
-  success: boolean;
-  meeting_id: string;
-}
-
 // Helper function to determine service from meeting URL
 function determineService(meetingUrl: string): "gmeet" | "teams" | "zoom" {
   const url = meetingUrl.toLowerCase();
@@ -161,12 +156,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const responseData: CreateMeetingResponse = {
-      success: true,
-      meeting_id: meeting.meeting_id,
-    };
-
-    return NextResponse.json(responseData);
+    return NextResponse.json({ success: true, meeting_id: meeting.meeting_id });
   } catch (error) {
     console.error("Error in create-meeting API:", error);
     return NextResponse.json(

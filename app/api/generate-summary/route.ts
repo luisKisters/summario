@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { GoogleGenAI, Type } from "@google/genai";
+import { Tables } from "@/types/database.types";
 
 interface GenerateSummaryRequest {
   meeting_id: string;
-}
-
-interface GenerateSummaryResponse {
-  success: boolean;
-  message: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -30,7 +26,7 @@ export async function POST(request: NextRequest) {
       .from("meetings")
       .select("*")
       .eq("meeting_id", meeting_id)
-      .single();
+      .single<Tables<"meetings">>();
 
     if (meetingError || !meeting) {
       console.error("Error fetching meeting:", meetingError);
@@ -55,7 +51,7 @@ export async function POST(request: NextRequest) {
       .from("users")
       .select("ai_generated_prompt, ai_generated_template, example_protocol")
       .eq("user_id", meeting.user_id)
-      .single();
+      .single<Pick<Tables<"users">, "ai_generated_prompt" | "ai_generated_template" | "example_protocol">>();
 
     if (userError || !user) {
       console.error("Error fetching user:", userError);
@@ -179,12 +175,7 @@ Your response MUST be a single JSON object with two top-level keys:
       throw new Error("Failed to update meeting with protocol");
     }
 
-    const responseData: GenerateSummaryResponse = {
-      success: true,
-      message: "Protocol generated successfully",
-    };
-
-    return NextResponse.json(responseData);
+    return NextResponse.json({ success: true, message: "Protocol generated successfully" });
   } catch (error) {
     console.error("Error in generate-summary API:", error);
 
