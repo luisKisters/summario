@@ -44,7 +44,9 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${
+            process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+          }/meetings`,
         },
       });
       if (error) throw error;
