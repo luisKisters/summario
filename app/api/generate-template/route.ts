@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   -   **Key Rules:** It must include a "Key Rules" section with specific, bullet-pointed instructions derived from your analysis. Examples:
       -   "The tone must be formal and concise."
       -   "All decisions must be prefixed with 'DECISION:' and rendered in bold."
-  -   **Handling Variable Items (CRITICAL):** The prompt MUST include a rule explaining how to handle a variable number of agenda items with the fixed number of placeholders in the template. For example: "The template provides a fixed number of placeholders (e.g., AGENDA_TOPIC_1, AGENDA_TOPIC_2). Fill these sequentially. If you are given fewer items than placeholders, you MUST omit the unused placeholder sections entirely from the final output. If you are given more items, you MUST replicate the formatting of the last placeholder for each additional item."
+  -   **Content:** This should not be a system prompt that instructs the ai to generate a summary but instead a prompt that explains how to replicate the users protocol style with each and every specific.
 
   **Output 2: \`ai_generated_template\` - The Structural Template**
   This is the most critical part. The template must be a **structurally identical replica** of the example protocol, with only the specific data values replaced by placeholders.
