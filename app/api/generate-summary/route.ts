@@ -7,6 +7,38 @@ interface GenerateSummaryRequest {
   meeting_id: string;
 }
 
+const SYSTEM_PROMPT = `
+You are an expert AI assistant specialized in generating professional meeting protocols from transcripts. Your task is to analyze meeting transcripts and create structured, accurate protocols that match the user's preferred style and format.
+
+**CRITICAL INSTRUCTIONS:**
+
+1. **Handling Variable Agenda Items:**
+   The template may provide a fixed number of placeholders (e.g., AGENDA_TOPIC_1, AGENDA_TOPIC_2). Fill these sequentially with the provided agenda topics. 
+   - If you are given fewer agenda items than placeholders, you MUST omit the unused placeholder sections entirely from the final output.
+   - If you are given more agenda items than placeholders, you MUST replicate the formatting of the last placeholder for each additional item, maintaining the same structure and style.
+
+2. **Table Formatting with Dot Points:**
+   If the user's template includes tables that contain dot points or bullet points within table cells, you MUST use HTML <br> tags for line breaks instead of markdown line breaks. This ensures proper rendering in markdown tables.
+
+3. **Participants Handling:**
+   - If the protocol template includes a participants section, you MUST list ALL participants provided in the participants data.
+   - Match names from the transcript to the correct participant names provided. For example, if the transcript has "louis" but the participants list has "Luis", use "Luis" in the protocol.
+   - Exclude any bots or automated speakers from the participants list.
+   - Only include human participants who were actually present in the meeting.
+
+4. **Protocol Generation Rules:**
+   - Strictly follow the user's example protocol style and formatting.
+   - Use the provided template as the foundation, filling in all placeholders appropriately.
+   - Ensure the final output is professional, clear, and comprehensive.
+   - Base all content on the actual transcript - do not add information that isn't supported by the conversation.
+   - Maintain the exact formatting and structure shown in the user's example protocol.
+
+5. **Output Structure:**
+   Your response MUST be a valid JSON object with exactly two top-level keys:
+   - 'final_protocol_output': A single string containing the complete, formatted markdown protocol
+   - 'analysis_and_sources': An array of objects, one for each agenda topic, containing the topic, agendaId, and detailed analysis with reasoning and source quotes
+`;
+
 export async function POST(request: NextRequest) {
   try {
     const body: GenerateSummaryRequest = await request.json();
@@ -51,7 +83,12 @@ export async function POST(request: NextRequest) {
       .from("users")
       .select("ai_generated_prompt, ai_generated_template, example_protocol")
       .eq("user_id", meeting.user_id)
-      .single<Pick<Tables<"users">, "ai_generated_prompt" | "ai_generated_template" | "example_protocol">>();
+      .single<
+        Pick<
+          Tables<"users">,
+          "ai_generated_prompt" | "ai_generated_template" | "example_protocol"
+        >
+      >();
 
     if (userError || !user) {
       console.error("Error fetching user:", userError);
@@ -77,21 +114,29 @@ export async function POST(request: NextRequest) {
     const agendaForPrompt = meeting.agenda_topics;
 
     // Construct the final, complex prompt for Gemini
-    const prompt = `${user.ai_generated_prompt}
+    const prompt = `
+${SYSTEM_PROMPT}
 
-Today's date is: ${new Date().toISOString().split("T")[0]}
+**USER-SPECIFIC CONFIGURATION:**
+${user.ai_generated_prompt}
 
-Here is the full transcript: ${meeting.raw_transcript}
+**CURRENT DATE:** ${new Date().toISOString().split("T")[0]}
 
-The agenda for this meeting was: ${JSON.stringify(agendaForPrompt)}
+**MEETING TRANSCRIPT:**
+${meeting.raw_transcript}
 
-Fill out this template: ${user.ai_generated_template}
+**AGENDA TOPICS:**
+${JSON.stringify(agendaForPrompt)}
 
-This is an example of an actual meeting protocoll ${user.example_protocol}
+**TEMPLATE TO FILL:**
+${user.ai_generated_template}
 
-Your response MUST be a single JSON object with two top-level keys:
-1. 'final_protocol_output': A single string containing the complete, formatted markdown protocol, filling the agenda topics.
-2. 'analysis_and_sources': An array of objects. Each object must have three keys: 'topic' (the exact agenda topic string from the provided list), 'agendaId' (the corresponding ID for that agenda topic), and 'analysis' (an object containing 'reasoning' (why that summary was concluded), and 'source_quotes' (an array of { speaker: string, text: string } from the transcript)).`;
+**MEETING PARTICIPANTS:**
+${JSON.stringify(meeting.participants)}
+
+**USER'S EXAMPLE PROTOCOL:**
+${user.example_protocol}
+`;
 
     // Make the API call to Gemini with structured output
     const response = await ai.models.generateContent({
@@ -175,7 +220,10 @@ Your response MUST be a single JSON object with two top-level keys:
       throw new Error("Failed to update meeting with protocol");
     }
 
-    return NextResponse.json({ success: true, message: "Protocol generated successfully" });
+    return NextResponse.json({
+      success: true,
+      message: "Protocol generated successfully",
+    });
   } catch (error) {
     console.error("Error in generate-summary API:", error);
 
