@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -32,6 +33,7 @@ export function MeetingSetupForm() {
   );
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("");
+  const [enableDiarization, setEnableDiarization] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -92,6 +94,7 @@ export function MeetingSetupForm() {
         meeting_url: meetingUrl.trim(),
         agenda_topics: validAgendaTopics,
         start_time_option: joinTimeOption,
+        enable_diarization: enableDiarization,
       };
 
       if (joinTimeOption === "scheduled" && selectedDate && selectedTime) {
@@ -227,6 +230,32 @@ export function MeetingSetupForm() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Transcription Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Transcription Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="enable-diarization"
+              checked={enableDiarization}
+              onCheckedChange={(checked) =>
+                setEnableDiarization(checked as boolean)
+              }
+            />
+            <Label htmlFor="enable-diarization" className="text-sm font-medium">
+              Enable speaker diarization
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            When enabled, the transcription will identify and label different
+            speakers. Uses Assembly AI for better accuracy. When disabled, uses
+            Whisper (faster but no speaker identification).
+          </p>
         </CardContent>
       </Card>
 

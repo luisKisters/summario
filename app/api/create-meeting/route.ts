@@ -8,6 +8,7 @@ interface CreateMeetingRequest {
   agenda_topics: Array<{ topic: string; details?: string }>;
   start_time_option: "now" | "scheduled";
   scheduled_start_datetime?: string; // ISO 8601 format
+  enable_diarization?: boolean;
 }
 
 // Helper function to determine service from meeting URL
@@ -20,8 +21,9 @@ function determineService(meetingUrl: string): "gmeet" | "teams" | "zoom" {
   } else if (url.includes("zoom.us") || url.includes("zoom")) {
     return "zoom";
   }
-  // Default to gmeet if we can't determine
-  return "gmeet";
+  throw new Error(
+    `Unable to determine meeting service from URL: ${meetingUrl}`
+  );
 }
 
 // Helper function to convert ISO datetime to Unix timestamp
@@ -38,15 +40,11 @@ export async function POST(request: NextRequest) {
       agenda_topics,
       start_time_option,
       scheduled_start_datetime,
+      enable_diarization,
     } = body;
 
     // Validate required fields
-    if (
-      !meeting_name ||
-      !meeting_url ||
-      !agenda_topics ||
-      !start_time_option
-    ) {
+    if (!meeting_name || !meeting_url || !agenda_topics || !start_time_option) {
       return NextResponse.json(
         {
           error:
@@ -87,14 +85,21 @@ export async function POST(request: NextRequest) {
     // Determine the service from the meeting URL
     const service = determineService(meeting_url);
 
+    // Default to true if no setting provided (defaults to assembly-ai)
+    const enableDiarization = enable_diarization !== false;
+
+    // Determine transcription model based on diarization setting
+    const transcriptionModel = enableDiarization ? "assembly-ai" : "whisper";
+
     // Construct the base request payload for the Skribby API
     const skribbyPayload: any = {
-      //   transcription_model: "deepgram", // Default to Deepgram for diarization for V1
-      transcription_model: "whisper",
+      transcription_model: transcriptionModel,
       service: service,
       meeting_url: meeting_url,
       bot_name: "Summario Bot",
-      webhook_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/meeting-callback`,
+      webhook_url: `${
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      }/api/meeting-callback`,
       //   lang: "en", // Default to English for V1
       //   video: false, // Default to false for V1
       //   profanity_filter: false, // Default to false for V1
@@ -149,6 +154,7 @@ export async function POST(request: NextRequest) {
         meeting_name: meeting_name,
         meeting_url: meeting_url,
         agenda_topics: agendaTopicsWithIds,
+        enable_diarization: enableDiarization,
         status: start_time_option === "scheduled" ? "SCHEDULED" : "INITIALIZED",
         scheduled_start_datetime:
           start_time_option === "scheduled" ? scheduled_start_datetime : null,
