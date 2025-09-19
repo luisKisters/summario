@@ -63,3 +63,20 @@ export interface StructuredProtocol {
     };
   };
 }
+
+export interface RawTranscriptItem {
+  start: number;
+  end?: number;
+  speaker?: number | string;
+  speaker_name?: string;
+  transcript: string;
+  // Additional properties from providers are ignored (e.g., confidence, utterances)
+  [key: string]: unknown;
+}
+
+export interface NormalizedTranscriptLine {
+  speaker: string;
+  speaker_name: string;
+  timestamp: string;
+  text: string;
+}
