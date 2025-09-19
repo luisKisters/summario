@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { GoogleGenAI, Type } from "@google/genai";
 import { Tables } from "@/types/database.types";
+import { formatTranscriptForDisplay } from "../../../lib/utils";
 
 interface GenerateSummaryRequest {
   meeting_id: string;
@@ -40,9 +41,11 @@ You are an expert AI assistant specialized in generating professional meeting pr
 `;
 
 export async function POST(request: NextRequest) {
+  let meeting_id: string | undefined;
+
   try {
     const body: GenerateSummaryRequest = await request.json();
-    const { meeting_id } = body;
+    meeting_id = body.meeting_id;
 
     if (!meeting_id) {
       return NextResponse.json(
@@ -113,6 +116,24 @@ export async function POST(request: NextRequest) {
     // Prepare agenda topics for the prompt
     const agendaForPrompt = meeting.agenda_topics;
 
+    const transcript_parsed = meeting.enable_diarization
+      ? formatTranscriptForDisplay(
+          JSON.parse(meeting.raw_transcript || "[]")
+        ).join("\n")
+      : meeting.raw_transcript;
+
+    // Format participants for better AI processing
+    const participants = Array.isArray(meeting.participants)
+      ? meeting.participants
+      : JSON.parse(
+          typeof meeting.participants === "string" ? meeting.participants : "[]"
+        );
+
+    const participantNames = participants
+      .filter((p: any) => p.name && !p.name.toLowerCase().includes("bot"))
+      .map((p: any) => p.name)
+      .join(", ");
+
     // Construct the final, complex prompt for Gemini
     const prompt = `
 ${SYSTEM_PROMPT}
@@ -123,24 +144,29 @@ ${user.ai_generated_prompt}
 **CURRENT DATE:** ${new Date().toISOString().split("T")[0]}
 
 **MEETING TRANSCRIPT:**
-${meeting.raw_transcript}
+${transcript_parsed}
 
 **AGENDA TOPICS:**
 ${JSON.stringify(agendaForPrompt)}
+
+**MEETING NAME:**
+${meeting.meeting_name}}
 
 **TEMPLATE TO FILL:**
 ${user.ai_generated_template}
 
 **MEETING PARTICIPANTS:**
-${JSON.stringify(meeting.participants)}
+${participantNames}
 
 **USER'S EXAMPLE PROTOCOL:**
 ${user.example_protocol}
 `;
 
+    console.log("PROMPTT: ", prompt);
+
     // Make the API call to Gemini with structured output
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-proo",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -228,11 +254,8 @@ ${user.example_protocol}
     console.error("Error in generate-summary API:", error);
 
     // Try to update meeting status to FAILED if we have a meeting_id
-    try {
-      const body = await request.json().catch(() => ({}));
-      const { meeting_id } = body as GenerateSummaryRequest;
-
-      if (meeting_id) {
+    if (meeting_id) {
+      try {
         const supabase = getAdminClient();
         await supabase
           .from("meetings")
@@ -242,9 +265,12 @@ ${user.example_protocol}
               error instanceof Error ? error.message : "Unknown error",
           })
           .eq("meeting_id", meeting_id);
+      } catch (updateError) {
+        console.error(
+          "Failed to update meeting status to FAILED:",
+          updateError
+        );
       }
-    } catch (updateError) {
-      console.error("Failed to update meeting status to FAILED:", updateError);
     }
 
     return NextResponse.json(
