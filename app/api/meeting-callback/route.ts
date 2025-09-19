@@ -156,25 +156,36 @@ async function set_transcript(bot_id: string, meeting_id: string) {
     }
 
     // If transcript is saved, trigger summary generation
-    console.log("Generating summary for meeting:", meeting_id);
-    const generateSummaryResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/generate-summary`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meeting_id: meeting_id }),
-      }
+    const summaryUrl = `${
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    }/api/generate-summary`;
+
+    console.log("Triggering summary generation for meeting:", meeting_id);
+    console.log("Summary URL:", summaryUrl);
+
+    const generateSummaryResponse = await fetch(summaryUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meeting_id: meeting_id }),
+    });
+
+    console.log(
+      "Summary generation response status:",
+      generateSummaryResponse.status
     );
 
     if (!generateSummaryResponse.ok) {
-      const errorJson = await generateSummaryResponse
-        .json()
-        .catch(() => ({ message: "Failed to parse error response" }));
-      throw new Error(
-        `Failed to trigger summary generation: ${
-          errorJson.message || "Unknown error"
-        }`
-      );
+      const errorText = await generateSummaryResponse.text();
+      let errorMessage = "Unknown error";
+
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorText;
+      } catch {
+        errorMessage = errorText || `HTTP ${generateSummaryResponse.status}`;
+      }
+
+      throw new Error(`Failed to trigger summary generation: ${errorMessage}`);
     }
   } catch (error) {
     console.error("Error in set_transcript:", error);
