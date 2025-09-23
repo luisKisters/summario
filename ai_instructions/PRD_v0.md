@@ -1,0 +1,318 @@
+---
+alwaysApply: true
+---
+
+Here is the complete Product Requirements Document for Summario, incorporating all discussions and requirements, and the accompanying `cursor-rules.mdx` file.
+
+---
+
+## **Product Requirements Document: Summario**
+
+### **1. Project Vision & V1 Scope**
+
+**Project Name:** Summario
+
+**Vision:** To revolutionize meeting documentation by providing an intelligent, AI-powered platform that automatically generates perfectly formatted meeting protocols from online conversations. Summario aims to be the indispensable tool for professionals who value clear, accurate, and consistently styled meeting records without the manual effort.
+
+**The Problem:** The process of taking meeting notes, synthesizing discussions, identifying decisions, and formatting a coherent protocol is time-consuming, prone to human error, and often inconsistent across teams. Traditional tools are rigid, requiring users to adapt to predefined structures, and lack the intelligence to truly understand and summarize complex conversations. The result is often incomplete, delayed, or poorly structured documentation, leading to miscommunication and lost information.
+
+**The Solution:** Summario addresses this by offering an innovative, AI-first approach:
+
+- **Automated Capture:** Deploy a bot into any Zoom, Microsoft Teams, or Google Meet call to transcribe conversations in real-time or post-call.
+- **Personalized AI:** Our unique selling proposition lies in the AI's ability to learn and adapt to each user's specific protocol style. Instead of generic summaries, users provide an _example_ of their ideal meeting protocol (complete with tables, bullet points, specific headings, tone, etc.). Our system then uses advanced prompt engineering with Google Gemini to generate a custom AI prompt and template that precisely replicates this desired output for all future meetings.
+- **Structured & Verifiable Protocols:** The AI-generated protocol is not just text; it's a structured output that includes the final markdown, along with detailed reasoning and direct quotes from the transcript for every agenda point. This allows users to easily verify the AI's conclusions and make informed edits.
+- **Streamlined Review & Approval:** A dedicated review interface enables users to quickly approve the AI-generated protocol or make text/voice-based edits, ensuring accuracy before finalization.
+
+**V1 Scope:** The initial release (V1) of Summario will deliver a complete and robust end-to-end user journey, providing immense value:
+
+1.  **Seamless Authentication:** Secure user login via Google (Supabase Auth).
+2.  **Personalized Protocol Setup:** An intuitive settings page where users provide an example protocol, which our AI transforms into a custom prompt and template.
+3.  **Effortless Meeting Creation:** A user interface to set up new meetings, provide a meeting URL, define agenda topics, and schedule the bot to join immediately or at a specific time.
+4.  **Intelligent Bot Deployment:** Integration with the Skribby API to deploy transcription bots into live meetings.
+5.  **Automated Transcription & AI Generation:** A backend pipeline that processes Skribby webhooks, retrieves transcripts, and uses Google Gemini with the user's custom prompt and template to generate highly structured meeting protocols.
+6.  **Interactive Review & Approval:** A dedicated meeting summary page where users can review, edit (text or voice-based input), verify AI reasoning with source quotes, and explicitly approve the generated protocol.
+7.  **Easy Export:** Functionality to copy the approved protocol as Markdown or export it as a `.md` file.
+
+### **2. Design System & Color Palette**
+
+The design philosophy is **clean, minimal, and focused on usability**. Visual clutter will be strictly avoided. The interface should be intuitive, guiding the user through each step with clear typography, thoughtful spacing, and a consistent visual hierarchy.
+
+**Color Palette:** A professional, modern, and calming palette, designed for readability and aesthetic appeal. These colors will be defined as CSS variables in `app/globals.css`.
+
+- `--background`: `#0F172A` (Slate 900) - Deep, dark background for depth and contrast.
+- `--foreground`: `#F8FAFC` (Slate 50) - Bright, crisp text for excellent readability.
+- `--card`: `#1E293B` (Slate 800) - Slightly lighter dark shade for content containers, providing soft separation.
+- `--primary`: `#22D3EE` (Cyan 400) - A vibrant, inviting primary action color that stands out.
+- `--primary-foreground`: `#0F172A` (Slate 900) - Dark text for high contrast on the primary color.
+- `--accent`: `#A3E635` (Lime 400) - A fresh, positive accent color, suitable for success states or highlights.
+- `--destructive`: `#FB7185` (Rose 400) - A clear, yet soft, color for warnings or destructive actions.
+- `--muted`: `#334155` (Slate 700) - A subdued background for secondary elements.
+- `--muted-foreground`: `#94A3B8` (Slate 400) - Lighter text for muted elements, maintaining readability.
+- `--border`: `#334155` (Slate 700) - Subtle borders for separation without harsh lines.
+
+### **Phase 0: Project Setup & Authentication**
+
+**Goal:** Establish the foundational Next.js project, integrate Supabase, setup the UI library, and implement a robust user authentication flow.
+
+- **Step 0.1: Initialize Next.js Project**
+
+  - Initialize a new Next.js project using `create-next-app` with TypeScript and Tailwind CSS.
+  - Configure to use the App Router (`/app` directory).
+
+- **Step 0.2: Integrate Supabase**
+
+  - Create a new project on `supabase.com`.
+  - Use the Supabase CLI to initialize it locally.
+  - Define the database schema in a new SQL migration file, including `public.users` and `public.meetings` tables as detailed below.
+  - Create a database trigger function in SQL to automatically create a `public.users` profile for new `auth.users`, syncing `email` and `full_name`.
+  - Install `@supabase/ssr` and `@supabase/auth-helpers-nextjs`.
+  - Configure Supabase URL and keys in `.env.local`.
+
+- **Step 0.3: Setup shadcn/ui**
+
+  - Initialize `shadcn/ui` using its CLI, configuring `tailwind.config.js` and `globals.css`.
+  - Install necessary components: `Button`, `Input`, `Card`, `Textarea`, `Sheet`, `Dialog`, `Label`, `Calendar`, `Popover`, `RadioGroup`.
+
+<!-- - **Step 0.4: Implement Authentication Flow**
+  - **Page: `/login`**
+    - **UI:** Display a `Card` titled "Login to Summario" with a `Button` labeled "Login with Google".
+    - **Logic:** `onClick` of the button, call `supabase.auth.signInWithOAuth({ provider: 'google' })`.
+  - **Route: `/auth/callback`**
+    - Handle the redirect from Google OAuth.
+  - **Middleware:** Implement `middleware.ts` to redirect unauthenticated users from `/app/*` routes (except `/login` and `/`).
+  - **Global UI:** Add a logout button in the main layout (e.g., header) that calls `supabase.auth.signOut()`. -->
+
+FOR NOW JUST USE EMAIL AS IT IS RN.
+
+### **Phase 1: User Settings & AI Template Generation**
+
+**Goal:** Enable users to define their desired meeting protocol format by providing an example, which an AI will then process into a re-usable prompt and template.
+
+- **Step 1.1: Build the Settings Page UI (`/settings`)**
+
+  - **Page: `/app/settings/page.tsx`**
+    - **UI Layout:**
+      - Main heading: "Your Protocol Settings".
+      - **Card 1: "1. Provide an Example"**
+        - `Textarea` for `example_protocol`.
+        - `Button` labeled "Generate My Template" (displays loading state).
+      - **Card 2: "2. Your AI Configuration"**
+        - Section: "AI Prompt" - `Textarea` for `ai_generated_prompt`.
+        - Section: "AI Template" - `Textarea` for `ai_generated_template`.
+      - `Button` labeled "Save Settings".
+    - **State Management:**
+      - Use `useState` hooks to manage the content of the three textareas.
+      - On initial page load, fetch the current user's settings from the database and populate the state.
+
+- **Step 1.2: Create the Template Generation API Endpoint (`/api/generate-template`)**
+
+  - **Route: `/app/api/generate-template/route.ts`**
+  - **Endpoint Logic (POST handler):**
+    - `// Expects a JSON body: { example_protocol: string }`
+    - `// Initialize the Google Gemini API client.`
+    - `// Construct a meta-prompt for Gemini to act as a prompt engineer.`
+    - `// This meta-prompt should be highly detailed, instructing Gemini to analyze the provided example protocol for:`
+    - `// - Overall writing style (formal, informal, journalistic, report-like)`
+    - `// - Tone (decisive, collaborative, informative)`
+    - `// - Formatting rules (e.g., "Decisions are always bolded", "Action items are in a markdown table with specific columns like 'Task', 'Owner', 'Due Date'", "Speaker names are prefixed with 'SPKR:'")`
+    - `// - Identification of dynamic elements (date, time, participants, meeting title, agenda topics).`
+    - `// The meta-prompt should request Gemini to generate a *new, detailed system prompt* for generating future protocols AND a *new template with placeholders* based on the example.`
+    - `// Request Gemini to respond ONLY with a structured JSON object containing 'ai_generated_prompt' (string) and 'ai_generated_template' (string).`
+    - `// Make the API call to Gemini.`
+    - `// Parse the JSON response.`
+    - `// Return the parsed JSON: { ai_generated_prompt: "...", ai_generated_template: "..." }`
+
+- **Step 1.3: Connect Frontend to Backend (Settings Page)**
+  - **Event Handler: "Generate My Template" Button `onClick`**
+    - `// Set loading state to true.`
+    - `// Make a POST request to '/api/generate-template' with the content of the example_protocol textarea.`
+    - `// On successful response, update the state for 'ai_generated_prompt' and 'ai_generated_template' textareas.`
+    - `// Set loading state to false.`
+    - `// Handle potential errors (e.g., display a toast).`
+  - **Event Handler: "Save Settings" Button `onClick`**
+    - `// Make an UPDATE call to the 'public.users' table in Supabase for the authenticated user.`
+    - `// Update the 'example_protocol', 'ai_generated_prompt', and 'ai_generated_template' columns with the current textarea states.`
+    - `// Display a success notification (toast).`
+
+### **Phase 2: Meeting Creation & Skribby Integration**
+
+**Goal:** Allow users to set up new meetings, specify an agenda and time, and deploy a Skribby bot.
+
+- **Step 2.1: Build the Meeting Setup Page UI (`/meeting-setup`)**
+
+  - **Page: `/app/meeting-setup/page.tsx`**
+    - **UI Components:**
+      - A `Card` for the meeting creation form.
+      - `Label` and `Input` for `meeting_url`.
+      - **Meeting Time Selection:**
+        - `RadioGroup` with options: "Join Now" and "Schedule for later".
+        - If "Schedule for later" is selected, conditionally render:
+          - A shadcn `Calendar` component (within a `Popover`) for date selection.
+          - A simple `Input` field for time selection (e.g., `HH:MM`).
+      - **Agenda Topics Section:**
+        - Use `useState` to manage an array of agenda topic objects: `[{ topic: string, details: string (optional) }]`.
+        - Render a list of `Input` fields for `topic` and a `Textarea` for `details` for each item.
+        - `Button` to "Add Agenda Topic".
+        - `Button` (e.g., icon) next to each item to remove it.
+      - `Button` labeled "Create Meeting & Launch Bot".
+    - **State Management:**
+      - `meeting_url` (string).
+      - `agenda_topics` (array of objects).
+      - `join_time_option` ('now' | 'scheduled').
+      - `selected_date` (Date object for `Calendar`).
+      - `selected_time` (string, e.g., "14:30").
+
+- **Step 2.2: Create the Meeting Creation API Endpoint (`/api/create-meeting`)**
+
+  - **Route: `/app/api/create-meeting/route.ts`**
+  - **Endpoint Logic (POST handler):**
+    - `// Expects a JSON body: { meeting_url: string, agenda_topics: [...], start_time_option: 'now' | 'scheduled', scheduled_start_datetime?: string (ISO 8601) }`
+    - `// Get the authenticated user's ID.`
+    - `// Determine the 'service' (gmeet, teams, zoom) from the 'meeting_url' (e.g., by checking domain).`
+    - `// Construct the base request payload for the Skribby API's POST /bot endpoint.`
+    - `// const skribbyPayload = {`
+    - `//   transcription_model: "deepgram", // Default to Deepgram for diarization for V1`
+    - `//   service: determined_service,`
+    - `//   meeting_url: body.meeting_url,`
+    - `//   bot_name: "Summario Bot",`
+    - `//   webhook_url: 'https://<your-domain>/api/meeting-callback',`
+    - `//   lang: "en", // Default to English for V1, can be user-configurable later`
+    - `//   video: false, // Default to false for V1`
+    - `//   profanity_filter: false, // Default to false for V1`
+    - `// };`
+    - `// **Conditional Start Time Logic:**`
+    - `// if (body.start_time_option === 'scheduled' && body.scheduled_start_datetime) {`
+    - `//   const scheduledUnixTimestamp = convertISOtoUnix(body.scheduled_start_datetime);`
+    - `//   skribbyPayload.scheduled_start_time = scheduledUnixTimestamp;`
+    - `// }`
+    - `// Make the POST request to the Skribby API with the Authorization Bearer token.`
+    - `// On success, Skribby returns a bot object containing an 'id'. This is the 'skribby_bot_id'.`
+    - `// Insert a new row into the 'public.meetings' table in Supabase.`
+    - `// supabase.from('meetings').insert({`
+    - `//   user_id: user.id,`
+    - `//   skribby_bot_id: skribby_response.id,`
+    - `//   meeting_url: body.meeting_url,`
+    - `//   agenda_topics: body.agenda_topics,`
+    - `//   status: 'INITIALIZED' // Or 'SCHEDULED' if scheduled_start_time was set`
+    - `// });`
+    - `// Return a success response with your internal meeting_id: { success: true, meeting_id: new_meeting_id }`
+
+- **Step 2.3: Connect Frontend to Backend (Meeting Setup Page)**
+  - **Event Handler: "Create Meeting & Launch Bot" Button `onClick`**
+    - `// Set loading state for the button.`
+    - `// Construct the request body using state variables (meeting_url, agenda_topics, selected_date, selected_time).`
+    - `// Make a POST request to '/api/create-meeting'.`
+    - `// On success, redirect the user to the specific summary page for the newly created meeting.`
+    - `// router.push(\`/summary/\${response.meeting_id}\`)`
+    - `// On error, display a toast notification with the error message.`
+
+### **Phase 3: Backend Webhooks & Summary Generation**
+
+**Goal:** Reliably receive meeting updates from Skribby and trigger the core AI protocol generation pipeline.
+
+- **Step 3.1: Implement the Skribby Webhook Listener (`/api/meeting-callback`)**
+
+  - **Route: `/app/api/meeting-callback/route.ts`**
+  - **Endpoint Logic (POST handler):**
+    - `// This endpoint should be publicly accessible, but consider implementing a signature verification if Skribby provides one for security.`
+    - `// Parse the webhook payload from Skribby (contains 'id' (skribby_bot_id), 'status', 'transcript', 'participants', etc.).`
+    - `// Find the corresponding meeting in 'public.meetings' using 'skribby_bot_id'.`
+    - `// Update the 'status' of that meeting in the database.`
+    - `// **CRITICAL LOGIC:**`
+    - `// if (new_status === 'finished') {`
+    - `//   // The meeting is done and transcribed.`
+    - `//   // Extract the full transcript data from the webhook payload.`
+    - `//   // Update the 'raw_transcript' column for the meeting.`
+    - `//   // Asynchronously trigger the summary generation. This can be done by a non-blocking internal API call or a Supabase Edge Function invocation.`
+    - `//   // Example: await fetch('https://<your-domain>/api/generate-summary', { method: 'POST', body: JSON.stringify({ meeting_id: meeting_db_id }), headers: { 'Content-Type': 'application/json' } });`
+    - `// } else if (new_status === 'failed' || new_status === 'not_admitted' || new_status === 'auth_required' || new_status === 'invalid_credentials') {`
+    - `//   // Handle various failure states.`
+    - `//   // Update 'status' to 'FAILED' and store a descriptive 'error_message' from Skribby.`
+    - `// }`
+    - `// **Response Requirement:** Respond immediately to Skribby with a 200 OK status code and a simple JSON body to acknowledge receipt.`
+    - `// return new Response(JSON.stringify({ status: "received" }), { status: 200 });`
+
+- **Step 3.2: Implement the Summary Generation Endpoint (`/api/generate-summary`)**
+  - **Route: `/app/api/generate-summary/route.ts`**
+  - **Endpoint Logic (POST handler):**
+    - `// This endpoint is internal and triggered by '/api/meeting-callback'.`
+    - `// Expects a JSON body: { meeting_id: string }`
+    - `// Fetch the specific meeting record from 'public.meetings' using the 'meeting_id'.`
+    - `// Fetch the associated user record from 'public.users' to get their 'ai_generated_prompt' and 'ai_generated_template'.`
+    - `// Initialize the Google Gemini API client.`
+    - `// Construct the final, complex prompt for Gemini:`
+    - `// - Start with the user's detailed 'ai_generated_prompt'.`
+    - `// - Inject the raw meeting transcript: "Here is the full transcript: ${meeting.raw_transcript}"`
+    - `// - Inject the user-defined agenda: "The agenda for this meeting was: ${meeting.agenda_topics}"`
+    - `// - Inject the template to be filled: "Fill out this template: ${user.ai_generated_template}"`
+    - `// - Provide strict structured output instructions:`
+    - `//   "Your response MUST be a single JSON object with two top-level keys:`
+    - `//    1. 'final_protocol_output': A single string containing the complete, formatted markdown protocol, filling the template using the agenda topics.`
+    - `//    2. 'analysis_and_sources': An object where each key is an *exact agenda topic string* from the provided list. Each value should be an object containing 'generated_markdown' (the specific markdown generated for that agenda topic), 'reasoning' (why that summary was concluded), and 'source_quotes' (an array of { speaker: string, text: string } from the transcript)." `
+    - `// Make the API call to Gemini, ensuring JSON mode is enabled if available.`
+    - `// On success, parse the Gemini JSON response.`
+    - `// Update the meeting record in 'public.meetings': set the 'structured_protocol' column to the parsed JSON and update the 'status' to 'SUMMARIZED'.`
+    - `// On error, update the meeting 'status' to 'FAILED' and store 'error_message'.`
+    - `// Return a success response.`
+
+### **Phase 4: The Summary, Review & Approve Page**
+
+**Goal:** Provide a two-stage user interface for reviewing, editing, explicitly approving, and finally exporting the AI-generated protocol.
+
+- **Step 4.1: Create the Meetings Dashboard (`/meetings`)**
+
+  - **Page: `/app/meetings/page.tsx`**
+    - **Functionality:**
+      - Fetch all meetings for the authenticated user from `public.meetings`.
+      - Display them in a list or grid of `Card` components.
+      - Each card should show the `meeting_url`, `created_at` timestamp, and current `status`.
+      - Each card should be a Next.js `<Link>` to `/summary/[meeting_id]`.
+
+- **Step 4.2: Build the Dynamic Summary Page (`/summary/[meeting_id]`)**
+
+  - **Page: `/app/summary/[meeting_id]/page.tsx` (Server Component)**
+
+    - **Data Fetching:** Fetch the specific meeting data for `params.meeting_id`.
+    - **Conditional Rendering:**
+      - `// If meeting.status is 'INITIALIZED', 'SCHEDULED', 'RECORDING', 'PROCESSING':`
+      - `//   Render a <MeetingStatusView /> client component.`
+      - `// Else if meeting.status is 'SUMMARIZED' or 'FAILED' (and not yet approved):`
+      - `//   Render a <ReviewProtocolView /> client component.`
+      - `// Else if meeting.status is 'APPROVED':`
+      - `//   Render an <ApprovedProtocolView /> client component.`
+
+  - **Component 1: `<MeetingStatusView />` (Client Component)**
+
+    - **UI:**
+      - Displays the current status (e.g., "Bot is joining...", "Recording in progress...", "Processing transcript...").
+      - If `meeting.status` is 'FAILED', display `meeting.error_message`.
+      - Show the `meeting.agenda_topics` to set user expectations.
+      - Include a refresh mechanism (button or auto-refresh) to check for status updates.
+
+  - **Component 2: `<ReviewProtocolView />` (Client Component)**
+
+    - **Initial Display (if `meeting.status` is 'SUMMARIZED'):**
+      - A prominent header: "Review & Edit Your Protocol".
+      - A `Textarea` initialized with `meeting.structured_protocol.final_protocol_output`. This textarea is fully editable.
+      - **Interactive Elements:** Next to each section (identified by agenda topic), a small "info" icon. `onClick` opens a `Sheet` or `Dialog` to display `meeting.structured_protocol.analysis_and_sources[agenda_topic].reasoning` and `source_quotes`.
+      - **Editing Options:**
+        - A "Voice Edit" button (V2 feature, placeholder for now).
+        - A "Discard Changes" button (resets `Textarea` to original `final_protocol_output`).
+      - **Action Button:** A primary `Button` labeled "Approve & Save Protocol".
+    - **Functionality (Approval):**
+      - "Approve & Save Protocol" button `onClick`:
+        - `// Set loading state.`
+        - `// Make a POST request to a new internal API route: '/api/approve-protocol'.`
+        - `// Request body: { meeting_id: string, approved_content: string (from textarea) }`
+        - `// This API endpoint updates the 'meetings' table: sets 'status' to 'APPROVED' and updates 'structured_protocol.final_protocol_output' with the edited content.`
+        - `// On success, trigger a client-side reload or re-render of the parent page to show <ApprovedProtocolView />.`
+        - `// Handle errors with toasts.`
+
+  - **Component 3: `<ApprovedProtocolView />` (Client Component)**
+    - **Display (if `meeting.status` is 'APPROVED'):**
+      - A prominent header: "Your Protocol is Approved".
+      - The content is a non-editable display of `meeting.structured_protocol.final_protocol_output`, rendered beautifully using `react-markdown`.
+      - The interactive "info" icons remain to show reasoning/sources.
+      - **Action Buttons:**
+        - A prominent `Button` labeled "Copy Markdown" (copies `final_protocol_output` to clipboard).
+        - A secondary `Button` labeled "Export as .md file" (triggers client-side download).
