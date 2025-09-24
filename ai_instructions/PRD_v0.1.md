@@ -13,23 +13,7 @@
 
 - **Step 5.2: Implement New Design System & Theming**
 
-  - **Task:** Update the application's colors, styles, and theming to a new brutalist-inspired aesthetic.
-  - **Details in `app/globals.css`:**
-    - Replace the existing color palette with the new purple-based theme.
-    - Define CSS variables for the entire palette:
-      ```css
-      :root {
-      	--primary: 80 56% 62%; /* #8A4FFF */
-      	--secondary: 270 100% 78%; /* #C18FFF */
-      	/* ... define all other necessary theme colors (background, foreground, card, etc.) using the new dark theme as a base ... */
-      }
-      ```
-  - **Details in `tailwind.config.js`:**
-    - Update the `theme.extend.colors` section to use these new CSS variables for `primary`, `secondary`, etc.
-  - **Global Style Application:**
-    - Apply a consistent, slightly rounded corner radius (`rounded-md` or similar) to all major elements like `Card` and `Button`.
-    - Increase the border width on interactive elements like `Button` and `Input` to `border-2` to achieve the brutalist look.
-    - Ensure consistent padding is used across all pages and components for a cohesive feel.
+implement consistent good looking theme
 
 - **Step 5.3: Database Migration - Add User Avatar**
 
