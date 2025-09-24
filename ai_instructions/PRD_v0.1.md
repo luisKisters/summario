@@ -114,11 +114,11 @@
 
 - **Step 7.1: Implement WYSIWYG Editor**
 
-  - **Task:** Replace the "Raw Markdown" `Textarea` in the `ReviewProtocolView` component with the Toast UI Editor.
+  - **Task:** Replace the "Raw Markdown" `Textarea` in the `ReviewMinutesView` component with the Toast UI Editor.
   - **Implementation:**
     - Install the TUI Editor library (`@toast-ui/editor`).
     - Create a new client component wrapper (e.g., `<TuiEditor />`) to handle the editor's initialization, as it directly manipulates the DOM. This component will prevent SSR issues.
-    - In `ReviewProtocolView`, use this `<TuiEditor />` component.
+    - In `ReviewMinutesView`, use this `<TuiEditor />` component.
     - **Props:** The editor component should accept the initial markdown content (`meeting.structured_protocol.final_protocol_output`).
     - **Getting Content:** The editor instance provides a `getMarkdown()` method. When the "Approve & Save Minutes" button is clicked, call this method on the editor instance to get the latest content and send it to your API.
 
@@ -137,8 +137,8 @@
 
 - **Step 7.3: Implement Sharing UI & API**
 
-  - **Task:** Add a "Share" button to the `ApprovedProtocolView` and create the backend logic to toggle sharing.
-  - **UI in `ApprovedProtocolView.tsx`:**
+  - **Task:** Add a "Share" button to the `ApprovedMinutesView` and create the backend logic to toggle sharing.
+  - **UI in `ApprovedMinutesView.tsx`:**
     - Add a "Share" `Button`.
     - Clicking this button opens a `Popover` or `Dialog`.
     - Inside, display a `Switch` component labeled "Make Publicly Accessible". The switch's state should reflect the current `meeting.share_permissions` value.

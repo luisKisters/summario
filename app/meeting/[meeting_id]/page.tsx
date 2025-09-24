@@ -1,9 +1,9 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import ApprovedProtocolView from "@/components/meeting/ApprovedProtocolView";
+import ApprovedMinutesView from "@/components/meeting/ApprovedMinutesView";
 import MeetingStatusView from "@/components/meeting/MeetingStatusView";
-import ReviewProtocolView from "@/components/meeting/ReviewProtocolView";
+import ReviewMinutesView from "@/components/meeting/ReviewMinutesView";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -112,9 +112,9 @@ export default function SummaryPage({
 	const renderView = () => {
 		switch (meeting.status) {
 			case "SUMMARIZED":
-				return <ReviewProtocolView meeting={meeting} />;
+				return <ReviewMinutesView meeting={meeting} />;
 			case "APPROVED":
-				return <ApprovedProtocolView meeting={meeting} />;
+				return <ApprovedMinutesView meeting={meeting} />;
 			default:
 				return <MeetingStatusView meeting={meeting} />;
 		}
