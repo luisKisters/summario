@@ -15,36 +15,27 @@
 
 implement consistent good looking theme
 
-- **Step 5.3: Database Migration - Add User Avatar**
+- **Step 5.3: Setup Google Auth**
+
+  - **Task:** Configure Google OAuth in Supabase and update the application to support Google sign-in.
+  - **Details:**
+    - In Supabase Dashboard, go to Authentication > Providers, enable Google, and configure the client ID and secret from Google Cloud Console.
+    - Update the auth components (e.g., login and sign-up forms) to include a Google sign-in button using Supabase's auth methods.
+    - Ensure the user creation trigger handles Google auth metadata, including avatar_url from Google.
+
+- **Step 5.4: Database Migration - Add User Avatar**
 
   - **Task:** Add an `avatar_url` column to the `users` table and update the new user trigger.
-  - **SQL Migration:** Execute the following SQL in your Supabase project:
+
+    - **SQL Migration:** Execute the following SQL in your Supabase project:
 
     ```sql
+
     -- Add the avatar_url column to the users table
-    ALTER TABLE public.users ADD COLUMN avatar_url TEXT;
 
-    -- Drop the old trigger function to recreate it
-    DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-    DROP FUNCTION IF EXISTS public.handle_new_user();
-
-    -- Create the UPDATED function to handle new user creation, now including avatar_url
-    CREATE OR REPLACE FUNCTION public.handle_new_user()
-    RETURNS TRIGGER AS $$
-    BEGIN
-      INSERT INTO public.users (user_id, full_name, email, avatar_url)
-      VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NEW.email, NEW.raw_user_meta_data->>'avatar_url');
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-    -- Recreate the trigger to call the updated function
-    CREATE TRIGGER on_auth_user_created
-      AFTER INSERT ON auth.users
-      FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
     ```
 
-- **Step 5.4: Implement Global Navbar**
+- **Step 5.5: Implement Global Navbar**
   - **Task:** Create a new, persistent `Navbar` component and integrate it into the main layout.
   - **Component (`/components/layout/Navbar.tsx`):**
     - **UI:**
