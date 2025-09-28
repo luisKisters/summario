@@ -102,7 +102,7 @@ export function Navbar() {
   if (loading) {
     return (
       <nav className="border-b bg-background">
-        <div className="w-full max-w-7xl mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto flex h-16 items-center px-6 sm:px-8 lg:px-12">
           <div className="flex items-center space-x-4">
             <Link
               href="/meetings"
@@ -121,7 +121,7 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-background">
-      <div className="w-full max-w-7xl mx-auto flex h-16 items-center px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-7xl mx-auto flex h-16 items-center px-6 sm:px-8 lg:px-12">
         <div className="flex items-center space-x-4">
           <Link
             href="/meetings"
