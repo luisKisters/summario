@@ -40,13 +40,13 @@ implement consistent good looking theme
   - **Component (`/components/layout/Navbar.tsx`):**
     - **UI:**
       - On the left, display the text "Summario" as a bold logo that links to the `/meetings` dashboard.
-      - On the right, implement a User Menu using shadcn's `DropdownMenu` triggered by an `Avatar` component.
+      - ~~On the right, implement a User Menu using shadcn's `DropdownMenu` triggered by an `Avatar` component.~~ Try to modify the theme swithcer component so that it works here
     - **Logic:**
       - The Navbar should be a client component (`"use client"`) to fetch user data.
       - Fetch the user's `full_name` and `avatar_url` from the `users` table to display in the `Avatar`.
       - The `DropdownMenu` should contain:
         - A link to `/settings`.
-        - A theme switcher (implement using `next-themes` and shadcn's `DropdownMenu` examples) with options for "Light", "Dark", and "System".
+        - A theme switcher (implement using the theme-switcher component) with options for "Light", "Dark", and "System".
         - A "Logout" option.
   - **Integration:** Add this `Navbar` component to the root `layout.tsx` so it appears on all authenticated pages.
 
