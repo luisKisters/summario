@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           agenda_topics: Json;
           created_at: string;
-          enable_diarization: boolean;
+          enable_diarization: boolean | null;
           error_message: string | null;
           meeting_id: string;
           meeting_name: string | null;
@@ -26,6 +26,7 @@ export type Database = {
           participants: Json | null;
           raw_transcript: string | null;
           scheduled_start_datetime: string | null;
+          share_permissions: string | null;
           skribby_bot_id: string;
           status: string;
           structured_protocol: Json | null;
@@ -35,7 +36,7 @@ export type Database = {
         Insert: {
           agenda_topics?: Json;
           created_at?: string;
-          enable_diarization?: boolean;
+          enable_diarization?: boolean | null;
           error_message?: string | null;
           meeting_id?: string;
           meeting_name?: string | null;
@@ -43,6 +44,7 @@ export type Database = {
           participants?: Json | null;
           raw_transcript?: string | null;
           scheduled_start_datetime?: string | null;
+          share_permissions?: string | null;
           skribby_bot_id: string;
           status?: string;
           structured_protocol?: Json | null;
@@ -52,7 +54,7 @@ export type Database = {
         Update: {
           agenda_topics?: Json;
           created_at?: string;
-          enable_diarization?: boolean;
+          enable_diarization?: boolean | null;
           error_message?: string | null;
           meeting_id?: string;
           meeting_name?: string | null;
@@ -60,6 +62,7 @@ export type Database = {
           participants?: Json | null;
           raw_transcript?: string | null;
           scheduled_start_datetime?: string | null;
+          share_permissions?: string | null;
           skribby_bot_id?: string;
           status?: string;
           structured_protocol?: Json | null;
@@ -80,9 +83,9 @@ export type Database = {
         Row: {
           ai_generated_prompt: string | null;
           ai_generated_template: string | null;
+          avatar_url: string | null;
           created_at: string;
           email: string | null;
-          enable_diarization: boolean | null;
           example_protocol: string | null;
           full_name: string | null;
           instructions: string | null;
@@ -91,9 +94,9 @@ export type Database = {
         Insert: {
           ai_generated_prompt?: string | null;
           ai_generated_template?: string | null;
+          avatar_url?: string | null;
           created_at?: string;
           email?: string | null;
-          enable_diarization?: boolean | null;
           example_protocol?: string | null;
           full_name?: string | null;
           instructions?: string | null;
@@ -102,9 +105,9 @@ export type Database = {
         Update: {
           ai_generated_prompt?: string | null;
           ai_generated_template?: string | null;
+          avatar_url?: string | null;
           created_at?: string;
           email?: string | null;
-          enable_diarization?: boolean | null;
           example_protocol?: string | null;
           full_name?: string | null;
           instructions?: string | null;
