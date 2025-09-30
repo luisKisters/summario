@@ -263,6 +263,11 @@ export async function POST(request: NextRequest) {
       }/api/meeting-callback`,
     };
 
+    skribbyPayload.stop_options = {
+      ...(skribbyPayload.stop_options || {}),
+      last_person_detection: 0,
+    };
+
     // Add language if specified
     if (apiLanguage) {
       skribbyPayload.lang = apiLanguage;
