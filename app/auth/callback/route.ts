@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      console.log("Forwarded Host:", forwardedHost);
-      console.log("Origin:", origin);
-      console.log("Redirect To:", redirectTo);
+      const forwardedHost = "https://summario.luiskisters.com"; //request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
 
       if (isLocalEnv) {
