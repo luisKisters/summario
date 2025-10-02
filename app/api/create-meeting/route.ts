@@ -333,7 +333,8 @@ export async function POST(request: NextRequest) {
       if (skribbyResponse.status === 521) {
         return NextResponse.json(
           {
-            error: "The meeting transcription service is temporarily unavailable. Please try again in a few minutes.",
+            error:
+              "The meeting transcription service is temporarily unavailable. Please try again in a few minutes.",
             technical_details: "Skribby platform server is down (Error 521)",
           },
           { status: 503 }
@@ -343,7 +344,8 @@ export async function POST(request: NextRequest) {
       if (skribbyResponse.status === 401) {
         return NextResponse.json(
           {
-            error: "Authentication failed with the transcription service. Please contact support.",
+            error:
+              "Authentication failed with the transcription service. Please contact support.",
             technical_details: "Invalid API key",
           },
           { status: 500 }
