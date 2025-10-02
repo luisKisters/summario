@@ -1,9 +1,10 @@
 "use client";
 
 import { Tables } from "@/types/database.types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import MultiStepLoader from "./MultiStepLoader";
+import EditableAgenda from "./EditableAgenda";
 
 type Meeting = Tables<"meetings">;
 
@@ -14,38 +15,52 @@ interface MeetingStatusViewProps {
 export default function MeetingStatusView({ meeting }: MeetingStatusViewProps) {
   const router = useRouter();
 
-  const handleRefresh = () => {
-    router.refresh();
+  // Removed Edit Setup: bots cannot be edited after creation
+
+  const isStoppable = [
+    "SCHEDULED",
+    "JOINING",
+    "RECORDING",
+    "PROCESSING",
+  ].includes(meeting.status);
+
+  const handleStopBot = async () => {
+    try {
+      const res = await fetch("/api/stop-bot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meeting_id: meeting.meeting_id }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to stop bot");
+      }
+    } catch (e) {
+      // Non-blocking; could add a toast here
+      console.error(e);
+    }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Meeting Status</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="font-semibold">Status:</p>
-          <p>{meeting.status}</p>
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-6">
+        <MultiStepLoader
+          currentStatus={meeting.status}
+          stoppable={isStoppable}
+          onStop={handleStopBot}
+        />
+
+        {/* Stop button now appears in MultiStepLoader under current step when applicable */}
+
         {meeting.status === "FAILED" && meeting.error_message && (
-          <div>
-            <p className="font-semibold text-destructive">Error:</p>
-            <p>{meeting.error_message}</p>
+          <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+            <p className="font-semibold text-red-800 mb-2">Error Occurred:</p>
+            <p className="text-red-700 text-sm">{meeting.error_message}</p>
           </div>
         )}
-        <div>
-          <p className="font-semibold">Agenda:</p>
-          <ul className="list-disc pl-5">
-            {(
-              meeting.agenda_topics as { topic: string; details?: string }[]
-            )?.map((item, index) => (
-              <li key={index}>{item.topic}</li>
-            ))}
-          </ul>
-        </div>
-        <Button onClick={handleRefresh}>Refresh Status</Button>
-      </CardContent>
-    </Card>
+      </div>
+
+      <EditableAgenda meeting={meeting} />
+    </div>
   );
 }

@@ -2,8 +2,8 @@ import { MeetingSetupForm } from "@/components/meeting-setup/MeetingSetupForm";
 
 export default function MeetingSetupPage() {
   return (
-    <div className="py-8 max-w-4xl">
-      <div className="mb-8">
+    <div className="py-8 w-full">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Create New Meeting
         </h1>
@@ -13,7 +13,9 @@ export default function MeetingSetupPage() {
         </p>
       </div>
 
-      <MeetingSetupForm />
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <MeetingSetupForm />
+      </div>
     </div>
   );
 }

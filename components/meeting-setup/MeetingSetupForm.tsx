@@ -145,6 +145,26 @@ export function MeetingSetupForm() {
 
   // Handle diarization change and validate language selection
   useEffect(() => {
+    // If the page has a prefill query param, apply it to the form state
+    try {
+      const url = new URL(window.location.href);
+      const prefillParam = url.searchParams.get("prefill");
+      if (prefillParam) {
+        const decoded = JSON.parse(decodeURIComponent(prefillParam));
+        if (decoded.meeting_name) setMeetingName(decoded.meeting_name);
+        if (decoded.meeting_url) setMeetingUrl(decoded.meeting_url);
+        if (Array.isArray(decoded.agenda_topics))
+          setAgendaTopics(decoded.agenda_topics);
+        if (typeof decoded.enable_diarization === "boolean")
+          setEnableDiarization(decoded.enable_diarization);
+        if (typeof decoded.language === "string") setLanguage(decoded.language);
+      }
+    } catch {
+      // ignore invalid prefill
+    }
+  }, []);
+
+  useEffect(() => {
     const availableLanguages = getAvailableLanguages();
     if (!isLanguageSupported(language, availableLanguages)) {
       // Reset to auto-detect if current language is not supported
