@@ -19,7 +19,7 @@ export default async function MeetingsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect("/login");
+    return redirect("/auth/login");
   }
 
   const { data: meetings, error } = await supabase
