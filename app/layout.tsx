@@ -4,8 +4,8 @@ import { ThemeProvider } from "next-themes";
 import { Navbar } from "@/components/layout/Navbar";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
+const defaultUrl = process.env.NEXT_PUBLIC_APP_URL
+  ? `https://${process.env.NEXT_PUBLIC_APP_URL}`
   : "http://localhost:3000";
 
 export const metadata: Metadata = {
