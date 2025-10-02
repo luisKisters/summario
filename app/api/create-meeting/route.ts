@@ -152,6 +152,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate Skribby API key
+    if (!process.env.SKRIBBY_API_KEY) {
+      console.error("SKRIBBY_API_KEY environment variable is not set");
+      return NextResponse.json(
+        { error: "Server configuration error: Missing API key" },
+        { status: 500 }
+      );
+    }
+
     // Determine the service from the meeting URL
     const service = determineService(meeting_url);
 
@@ -287,6 +296,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Make the POST request to the Skribby API
+    console.log(
+      "Sending request to Skribby API with payload:",
+      JSON.stringify(skribbyPayload, null, 2)
+    );
+
     const skribbyResponse = await fetch(
       "https://platform.skribby.io/api/v1/bot",
       {
@@ -300,13 +314,50 @@ export async function POST(request: NextRequest) {
     );
 
     if (!skribbyResponse.ok) {
-      const errorData = await skribbyResponse.json().catch(() => ({}));
-      console.error("Skribby API error:", errorData);
+      const responseText = await skribbyResponse.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+      } catch {
+        errorData = { raw_response: responseText };
+      }
+
+      console.error("Skribby API error details:", {
+        status: skribbyResponse.status,
+        statusText: skribbyResponse.statusText,
+        headers: Object.fromEntries(skribbyResponse.headers.entries()),
+        body: errorData,
+      });
+
+      // Handle specific error cases with user-friendly messages
+      if (skribbyResponse.status === 521) {
+        return NextResponse.json(
+          {
+            error: "The meeting transcription service is temporarily unavailable. Please try again in a few minutes.",
+            technical_details: "Skribby platform server is down (Error 521)",
+          },
+          { status: 503 }
+        );
+      }
+
+      if (skribbyResponse.status === 401) {
+        return NextResponse.json(
+          {
+            error: "Authentication failed with the transcription service. Please contact support.",
+            technical_details: "Invalid API key",
+          },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         {
-          error: `Failed to create Skribby bot: ${
-            errorData.message || skribbyResponse.statusText
+          error: `Failed to create meeting bot (${skribbyResponse.status}): ${
+            errorData.message ||
+            errorData.error ||
+            "Service temporarily unavailable"
           }`,
+          technical_details: responseText.slice(0, 200) + "...",
         },
         { status: 500 }
       );
