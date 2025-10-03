@@ -7,9 +7,7 @@ import { useState } from "react";
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log(
-    `URL: ${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/meetings`
-  );
+  console.log(`URL: ${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -19,7 +17,7 @@ export function GoogleAuthButton() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/meetings`,
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
         },
       });
 
