@@ -5,8 +5,9 @@ import React, {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
-import { Editor } from "@toast-ui/react-editor";
+import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import "@toast-ui/editor/dist/toastui-editor.css";
 import "@toast-ui/editor/dist/theme/toastui-editor-dark.css";
@@ -23,20 +24,42 @@ export interface TuiEditorRef {
   setMarkdown: (content: string) => void;
 }
 
+// Dynamic import for Toast UI Editor to prevent SSR issues
+const EditorComponent = dynamic(
+  () =>
+    import("@toast-ui/react-editor").then((mod) => {
+      return mod.Editor;
+    }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="border rounded-md p-4 animate-pulse">
+        <div className="h-8 bg-muted rounded mb-2"></div>
+        <div className="h-96 bg-muted rounded"></div>
+      </div>
+    ),
+  }
+);
+
 const TuiEditor = forwardRef<TuiEditorRef, TuiEditorProps>(
   ({ initialValue = "", height = "400px", placeholder, onChange }, ref) => {
-    const editorRef = useRef<Editor>(null);
+    const editorRef = useRef<any>(null);
     const { theme, resolvedTheme } = useTheme();
     const isDark = theme === "dark" || resolvedTheme === "dark";
+    const [isMounted, setIsMounted] = useState(false);
 
     useImperativeHandle(ref, () => ({
       getMarkdown: () => {
-        return editorRef.current?.getInstance().getMarkdown() || "";
+        return editorRef.current?.getInstance()?.getMarkdown() || "";
       },
       setMarkdown: (content: string) => {
-        editorRef.current?.getInstance().setMarkdown(content);
+        editorRef.current?.getInstance()?.setMarkdown(content);
       },
     }));
+
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
 
     const handleChange = () => {
       if (onChange && editorRef.current) {
@@ -46,6 +69,8 @@ const TuiEditor = forwardRef<TuiEditorRef, TuiEditorProps>(
     };
 
     useEffect(() => {
+      if (!isMounted) return;
+
       // Apply theme to editor after it's mounted
       const applyTheme = () => {
         // Target the entire editor container including toolbar
@@ -89,7 +114,16 @@ const TuiEditor = forwardRef<TuiEditorRef, TuiEditorProps>(
         clearTimeout(timeout);
         clearInterval(interval);
       };
-    }, [isDark]);
+    }, [isDark, isMounted]);
+
+    if (!isMounted) {
+      return (
+        <div className="border rounded-md p-4 animate-pulse">
+          <div className="h-8 bg-muted rounded mb-2"></div>
+          <div className="h-96 bg-muted rounded"></div>
+        </div>
+      );
+    }
 
     return (
       <div
@@ -97,7 +131,7 @@ const TuiEditor = forwardRef<TuiEditorRef, TuiEditorProps>(
           isDark ? "tui-editor-dark-wrapper" : "tui-editor-light-wrapper"
         }`}
       >
-        <Editor
+        <EditorComponent
           ref={editorRef}
           initialValue={initialValue}
           placeholder={placeholder}
