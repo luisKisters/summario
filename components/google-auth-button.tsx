@@ -12,16 +12,10 @@ export function GoogleAuthButton() {
     const supabase = createClient();
 
     try {
-      // Use window.location.origin to get the actual current domain
-      const currentOrigin =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${currentOrigin}/auth/callback?next=/meetings`,
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/meetings`,
         },
       });
 
