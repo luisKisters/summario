@@ -139,7 +139,7 @@ export function Navbar() {
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src={undefined} // Will be updated when avatar_url is added to the database
+                    src={user?.avatar_url ?? undefined}
                     alt={user?.full_name ?? "User"}
                   />
                   <AvatarFallback className="text-sm">
