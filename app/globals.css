@@ -3,251 +3,346 @@
 @tailwind utilities;
 
 @layer components {
-	.prose {
-		color: hsl(var(--foreground));
-	}
+  .prose {
+    color: hsl(var(--foreground));
+  }
 
-	.prose h1,
-	.prose h2,
-	.prose h3,
-	.prose h4,
-	.prose h5,
-	.prose h6 {
-		color: hsl(var(--foreground));
-	}
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    color: hsl(var(--foreground));
+  }
 
-	.prose p {
-		color: hsl(var(--foreground));
-	}
+  .prose p {
+    color: hsl(var(--foreground));
+  }
 
-	.prose strong {
-		color: hsl(var(--foreground));
-	}
+  .prose strong {
+    color: hsl(var(--foreground));
+  }
 
-	.prose code {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
-	}
+  .prose code {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
 
-	.prose pre {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
-	}
+  .prose pre {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
 
-	.prose pre code {
-		background-color: transparent;
-		color: hsl(var(--foreground));
-	}
+  .prose pre code {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+  }
 
-	.prose blockquote {
-		color: hsl(var(--muted-foreground));
-	}
+  .prose blockquote {
+    color: hsl(var(--muted-foreground));
+  }
 
-	.prose ul,
-	.prose ol {
-		color: hsl(var(--foreground));
-	}
+  .prose ul,
+  .prose ol {
+    color: hsl(var(--foreground));
+  }
 
-	.prose li {
-		color: hsl(var(--foreground));
-	}
+  .prose li {
+    color: hsl(var(--foreground));
+  }
 
-	.prose a {
-		color: hsl(var(--primary));
-	}
+  .prose a {
+    color: hsl(var(--primary));
+  }
 
-	.prose table {
-		color: hsl(var(--foreground));
-	}
+  .prose table {
+    color: hsl(var(--foreground));
+  }
 
-	.prose th {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
-	}
+  .prose th {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
 
-	.prose td {
-		color: hsl(var(--foreground));
-	}
+  .prose td {
+    color: hsl(var(--foreground));
+  }
 
-	.prose thead th {
-		color: hsl(var(--foreground));
-	}
+  .prose thead th {
+    color: hsl(var(--foreground));
+  }
 
-	.prose tbody td {
-		color: hsl(var(--foreground));
-	}
+  .prose tbody td {
+    color: hsl(var(--foreground));
+  }
 
-	/* Ensure prose-invert works properly */
-	.prose-invert .prose {
-		color: hsl(var(--foreground));
-	}
+  /* Ensure prose-invert works properly */
+  .prose-invert .prose {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose h1,
-	.prose-invert .prose h2,
-	.prose-invert .prose h3,
-	.prose-invert .prose h4,
-	.prose-invert .prose h5,
-	.prose-invert .prose h6 {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose h1,
+  .prose-invert .prose h2,
+  .prose-invert .prose h3,
+  .prose-invert .prose h4,
+  .prose-invert .prose h5,
+  .prose-invert .prose h6 {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose p {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose p {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose strong {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose strong {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose code {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose code {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose pre {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose pre {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose pre code {
-		background-color: transparent;
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose pre code {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose blockquote {
-		color: hsl(var(--muted-foreground));
-	}
+  .prose-invert .prose blockquote {
+    color: hsl(var(--muted-foreground));
+  }
 
-	.prose-invert .prose ul,
-	.prose-invert .prose ol,
-	.prose-invert .prose li {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose ul,
+  .prose-invert .prose ol,
+  .prose-invert .prose li {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose a {
-		color: hsl(var(--primary));
-	}
+  .prose-invert .prose a {
+    color: hsl(var(--primary));
+  }
 
-	.prose-invert .prose table {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose table {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose th {
-		background-color: hsl(var(--muted));
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose th {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose td {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose td {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose thead th {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose thead th {
+    color: hsl(var(--foreground));
+  }
 
-	.prose-invert .prose tbody td {
-		color: hsl(var(--foreground));
-	}
+  .prose-invert .prose tbody td {
+    color: hsl(var(--foreground));
+  }
 }
 
 @layer base {
-	:root {
-		--radius: 0.65rem;
-		--background: 0 0% 100%;
-		--foreground: 240 10% 4%;
-		--card: 0 0% 100%;
-		--card-foreground: 240 10% 4%;
-		--popover: 0 0% 100%;
-		--popover-foreground: 240 10% 4%;
-		--primary: 261 100% 66%;
-		--primary-foreground: 250 100% 98%;
-		--secondary: 240 5% 96%;
-		--secondary-foreground: 240 6% 10%;
-		--muted: 240 5% 96%;
-		--muted-foreground: 240 4% 46%;
-		--accent: 240 5% 96%;
-		--accent-foreground: 240 6% 10%;
-		--destructive: 357 100% 45%;
-		--border: 240 6% 90%;
-		--input: 240 6% 90%;
-		--ring: 261 100% 66%;
-		--chart-1: 18 100% 48%;
-		--chart-2: 175 100% 29%;
-		--chart-3: 196 72% 23%;
-		--chart-4: 44 100% 50%;
-		--chart-5: 36 100% 50%;
-		--sidebar: 0 0% 98%;
-		--sidebar-foreground: 240 10% 4%;
-		--sidebar-primary: 261 100% 66%;
-		--sidebar-primary-foreground: 250 100% 98%;
-		--sidebar-accent: 240 5% 96%;
-		--sidebar-accent-foreground: 240 6% 10%;
-		--sidebar-border: 240 6% 90%;
-		--sidebar-ring: 261 100% 66%;
-	}
+  :root {
+    --radius: 0.65rem;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 261 100% 66%;
+    --primary-foreground: 250 100% 98%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 357 100% 45%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 261 100% 66%;
+    --chart-1: 18 100% 48%;
+    --chart-2: 175 100% 29%;
+    --chart-3: 196 72% 23%;
+    --chart-4: 44 100% 50%;
+    --chart-5: 36 100% 50%;
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 240 10% 4%;
+    --sidebar-primary: 261 100% 66%;
+    --sidebar-primary-foreground: 250 100% 98%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 261 100% 66%;
+  }
 
-	.dark {
-		--background: 240 10% 4%;
-		--foreground: 0 0% 98%;
-		--card: 240 6% 10%;
-		--card-foreground: 0 0% 98%;
-		--popover: 240 6% 10%;
-		--popover-foreground: 0 0% 98%;
-		--primary: 265 99% 56%;
-		--primary-foreground: 250 100% 98%;
-		--secondary: 240 4% 16%;
-		--secondary-foreground: 0 0% 98%;
-		--muted: 240 4% 16%;
-		--muted-foreground: 240 5% 64%;
-		--accent: 240 4% 16%;
-		--accent-foreground: 0 0% 98%;
-		--destructive: 359 100% 70%;
-		--border: 0 0% 100% / 0.1;
-		--input: 0 0% 100% / 0.15;
-		--ring: 265 99% 56%;
-		--chart-1: 225 84% 49%;
-		--chart-2: 160 100% 37%;
-		--chart-3: 36 100% 50%;
-		--chart-4: 273 100% 64%;
-		--chart-5: 345 100% 56%;
-		--sidebar: 240 6% 10%;
-		--sidebar-foreground: 0 0% 98%;
-		--sidebar-primary: 265 99% 56%;
-		--sidebar-primary-foreground: 250 100% 98%;
-		--sidebar-accent: 240 4% 16%;
-		--sidebar-accent-foreground: 0 0% 98%;
-		--sidebar-border: 0 0% 100% / 0.1;
-		--sidebar-ring: 265 99% 56%;
-	}
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 6% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 265 99% 56%;
+    --primary-foreground: 250 100% 98%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 64%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 359 100% 70%;
+    --border: 0 0% 100% / 0.1;
+    --input: 0 0% 100% / 0.15;
+    --ring: 265 99% 56%;
+    --chart-1: 225 84% 49%;
+    --chart-2: 160 100% 37%;
+    --chart-3: 36 100% 50%;
+    --chart-4: 273 100% 64%;
+    --chart-5: 345 100% 56%;
+    --sidebar: 240 6% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 265 99% 56%;
+    --sidebar-primary-foreground: 250 100% 98%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 100% / 0.1;
+    --sidebar-ring: 265 99% 56%;
+  }
 }
 
 @layer base {
-	* {
-		@apply border-border;
-	}
-	body {
-		@apply bg-background text-foreground;
-	}
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 /* Hide native time input spinners and picker icon across browsers while keeping type=time */
 input[type="time"]::-webkit-calendar-picker-indicator {
-	display: none;
-	-webkit-appearance: none;
+  display: none;
+  -webkit-appearance: none;
 }
 input[type="time"]::-webkit-clear-button,
 input[type="time"]::-webkit-inner-spin-button,
 input[type="time"]::-webkit-outer-spin-button {
-	display: none;
-	-webkit-appearance: none;
-	margin: 0;
+  display: none;
+  -webkit-appearance: none;
+  margin: 0;
 }
 /* Firefox */
 input[type="time"] {
-	-moz-appearance: textfield;
+  -moz-appearance: textfield;
 }
 /* Edge/Chromium additional */
 input[type="time"]::-ms-clear,
 input[type="time"]::-ms-reveal {
-	display: none;
+  display: none;
+}
+
+/* Toast UI Editor Dark Theme Integration */
+.dark .toastui-editor-defaultUI,
+.tui-editor-dark-wrapper .toastui-editor-defaultUI {
+  border-color: hsl(var(--border));
+}
+
+.dark .toastui-editor-toolbar,
+.tui-editor-dark-wrapper .toastui-editor-toolbar,
+.toastui-editor-dark .toastui-editor-toolbar {
+  background-color: hsl(var(--muted)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark .toastui-editor-toolbar button,
+.tui-editor-dark-wrapper .toastui-editor-toolbar button,
+.toastui-editor-dark .toastui-editor-toolbar button {
+  color: hsl(var(--foreground)) !important;
+  background-color: transparent !important;
+}
+
+.dark .toastui-editor-toolbar button:hover,
+.tui-editor-dark-wrapper .toastui-editor-toolbar button:hover,
+.toastui-editor-dark .toastui-editor-toolbar button:hover {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.dark .toastui-editor-toolbar button.active,
+.tui-editor-dark-wrapper .toastui-editor-toolbar button.active,
+.toastui-editor-dark .toastui-editor-toolbar button.active {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.dark .toastui-editor-toolbar .toastui-editor-dropdown-toolbar,
+.tui-editor-dark-wrapper
+  .toastui-editor-toolbar
+  .toastui-editor-dropdown-toolbar,
+.toastui-editor-dark .toastui-editor-toolbar .toastui-editor-dropdown-toolbar {
+  background-color: hsl(var(--muted)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark .toastui-editor-md-container .toastui-editor,
+.tui-editor-dark-wrapper .toastui-editor-md-container .toastui-editor {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.dark .toastui-editor-contents,
+.tui-editor-dark-wrapper .toastui-editor-contents {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.dark .toastui-editor-contents h1,
+.dark .toastui-editor-contents h2,
+.dark .toastui-editor-contents h3,
+.dark .toastui-editor-contents h4,
+.dark .toastui-editor-contents h5,
+.dark .toastui-editor-contents h6 {
+  color: hsl(var(--foreground));
+}
+
+.dark .toastui-editor-contents p {
+  color: hsl(var(--foreground));
+}
+
+.dark .toastui-editor-contents blockquote {
+  border-left-color: hsl(var(--border));
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .toastui-editor-contents code {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.dark .toastui-editor-contents pre {
+  background-color: hsl(var(--muted));
+}
+
+.dark .toastui-editor-contents table {
+  border-color: hsl(var(--border));
+}
+
+.dark .toastui-editor-contents td,
+.dark .toastui-editor-contents th {
+  border-color: hsl(var(--border));
+}
+
+.dark .toastui-editor-contents th {
+  background-color: hsl(var(--muted));
 }

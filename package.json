@@ -19,6 +19,8 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@toast-ui/editor": "^3.2.2",
+    "@toast-ui/react-editor": "^3.2.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -29,8 +31,6 @@
     "react-day-picker": "^9.9.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
-    "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
