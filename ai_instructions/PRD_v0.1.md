@@ -97,30 +97,62 @@ implement consistent good looking theme
     - **Props:** The editor component should accept the initial markdown content (`meeting.structured_protocol.final_protocol_output`).
     - **Getting Content:** The editor instance provides a `getMarkdown()` method. When the "Approve & Save Minutes" button is clicked, call this method on the editor instance to get the latest content and send it to your API.
 
-- **Step 7.2: Database & RLS for Public Sharing**
+- **Step 7.2: Database & RLS for Enhanced Sharing**
 
-  - **Task:** Implement the Row-Level Security policy to allow public access to shared minutes.
+  - **Task:** Update the `meetings` table to support granular access levels and implement the corresponding Row-Level Security policies.
+  - **Details:**
+    - The `share_permissions` column will be renamed to `access_level`.
+    - This column will store the sharing status of the meeting, using one of the following values: `PRIVATE`, `VIEWER`, `CONTRIBUTOR`, `EDITOR`, `OWNER`.
   - **SQL for RLS Policy:**
+
     ```sql
-    -- This policy allows anyone to view a meeting if its 'share_permissions' is set to 'PUBLIC'.
-    -- It assumes a policy for owners to view their own meetings already exists.
+    -- First, create a new type for the access levels to ensure data integrity.
+    CREATE TYPE meeting_access_level AS ENUM ('PRIVATE', 'VIEWER', 'CONTRIBUTOR', 'EDITOR', 'OWNER');
+
+    -- Alter the table to use the new type and rename the column.
+    -- Note: This migration assumes you will handle data conversion from the old values.
+    ALTER TABLE public.meetings
+      ADD COLUMN access_level meeting_access_level DEFAULT 'PRIVATE' NOT NULL;
+
+    -- This policy allows public read access for any non-private meeting.
+    -- More specific edit rights will be handled in the application logic and API endpoints.
     CREATE POLICY "Public can view shared meetings."
     ON public.meetings
     FOR SELECT
-    USING (share_permissions = 'PUBLIC');
+    USING (access_level <> 'PRIVATE');
+
+    -- Update existing owner policy to ensure owners can always access their meetings.
+    -- (Assuming a policy like this already exists)
+    CREATE POLICY "Owners can manage their own meetings"
+    ON public.meetings
+    FOR ALL
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
     ```
 
 - **Step 7.3: Implement Sharing UI & API**
 
-  - **Task:** Add a "Share" button to the `ApprovedMinutesView` and create the backend logic to toggle sharing.
-  - **UI in `ApprovedMinutesView.tsx`:**
-    - Add a "Share" `Button`.
-    - Clicking this button opens a `Popover` or `Dialog`.
-    - Inside, display a `Switch` component labeled "Make Publicly Accessible". The switch's state should reflect the current `meeting.share_permissions` value.
-    - Below the switch, show a read-only `Input` with the shareable URL (`<your-domain>/meeting/[meeting_id]`).
-  - **API Route (`/api/update-sharing`):**
-    - Create a new `POST` endpoint that accepts `{ meeting_id: string, is_public: boolean }`.
-    - This endpoint will update the `share_permissions` column for the specified meeting to either `'PUBLIC'` or `NULL` based on the `is_public` flag. Ensure only the meeting owner can call this.
+  - **Task:** Add a "Share" button to the main meeting page, which opens a popover to manage access levels, and create the backend logic.
+  - **UI (`/app/meeting/[meeting_id]/page.tsx`):**
+    - A "Share" `Button` should be prominently displayed at the top of the meeting page, next to the meeting title. This ensures it is available at all stages of the meeting lifecycle.
+  - **Component (`/components/meeting/SharePopover.tsx`):**
+    - Clicking the "Share" button will open a `Popover`.
+    - For meeting owners:
+      - A `Switch` labeled "Share Meeting" will be displayed.
+      - When toggled on, the access level defaults to `VIEWER`.
+      - A `RadioGroup` appears, allowing the owner to select the access level:
+        - **Private**: "Only you can access."
+        - **Viewer**: "Anyone with the link can view."
+        - **Contributor**: "Anyone with the link can edit the agenda."
+        - **Editor**: "Anyone with the link can edit the agenda and minutes."
+        - **Owner**: "Full access to manage the meeting."
+    - For non-owners, only the shareable URL and a "Copy Link" button are visible.
+    - The `RadioGroup`'s state should reflect the current `meeting.access_level`.
+    - Below the options, show a read-only `Input` with the shareable URL (`<your-domain>/meeting/[meeting_id]`), along with a "Copy Link" button.
+  - **API Route (`/api/update-meeting-access`):**
+    - Create a new `POST` endpoint that accepts `{ meeting_id: string, access_level: string }`.
+    - This endpoint will update the `access_level` column for the specified meeting.
+    - **Security:** Ensure only the meeting owner can call this endpoint to change the access level.
 
 - **Step 7.4: Handle Unauthenticated Access**
   - **Task:** Modify the data fetching logic on the `/meeting/[meeting_id]` page to handle public vs. private minutes for logged-out users.

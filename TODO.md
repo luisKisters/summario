@@ -1,8 +1,10 @@
 # TODOs
 
+- redirect users to route the user was on after google sign in
+
 **MeetingSetupForm.tsx**
 
-- [ ] test scheduling meetings
+- [x] test scheduling meetings
 
 **ReviewMinutesView.tsx** & **ApprovedMinutesView.tsx**
 
@@ -67,6 +69,14 @@
 - [ ] Error handling works for unsupported language combinations
 - [ ] Database stores language and messaging preferences correctly
 
+### Step 6.3 - Live Meeting Status View
+
+- [ ] For statuses INITIALIZED/SCHEDULED, page shows two-column layout with loader and agenda
+- [ ] MultiStepLoader highlights correct step for statuses: SCHEDULED, INITIALIZED, JOINING, RECORDING, DONE, PROCESSING
+- [ ] Error message is shown when status is FAILED and includes error_message
+- [ ] "Edit Setup" button appears only when status is INITIALIZED or SCHEDULED
+- [ ] Clicking "Edit Setup" navigates to /meeting-setup with fields pre-filled (name, url, agenda, diarization)
+
 ## Other
 
 - [ ] implement rate limiting for Gemini API
@@ -77,3 +87,4 @@
   - [ ] no broken md stuff
   - [ ] all analysis & sources can be stringmatched using the agenda topics
 - [ ] re-enable no-explicit-any, no-unused-vars, react-hooks/exhaustive-deps, no-unescaped-entities and fix underlying issues
+- [x] add ability to stop bots in ui

@@ -5,11 +5,13 @@ import ApprovedMinutesView from "@/components/meeting/ApprovedMinutesView";
 import MeetingStatusView from "@/components/meeting/MeetingStatusView";
 import ReviewMinutesView from "@/components/meeting/ReviewMinutesView";
 import { Button } from "@/components/ui/button";
+import SharePopover from "@/components/meeting/SharePopover";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Tables } from "@/types/database.types";
+import { Tables, Enums } from "@/types/database.types";
 
 type Meeting = Tables<"meetings">;
+type AccessLevel = Enums<"meeting_access_level">;
 
 export default function SummaryPage({
   params,
@@ -21,6 +23,7 @@ export default function SummaryPage({
   const [error, setError] = useState<string | null>(null);
   const [meetingId, setMeetingId] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   // Initialize meeting ID from params
   useEffect(() => {
@@ -39,6 +42,10 @@ export default function SummaryPage({
 
     try {
       const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { data, error } = await supabase
         .from("meetings")
         .select("*, meeting_name")
@@ -49,6 +56,9 @@ export default function SummaryPage({
         setError(error.message);
       } else {
         setMeeting(data);
+        if (user && data.user_id === user.id) {
+          setIsOwner(true);
+        }
         setError(null);
       }
     } catch (err) {
@@ -80,6 +90,57 @@ export default function SummaryPage({
   // Manual refresh
   const handleRefresh = () => {
     fetchMeeting(true);
+  };
+
+  const handleAccessLevelChange = async (accessLevel: AccessLevel) => {
+    if (!meeting) return;
+
+    const response = await fetch("/api/update-meeting-access", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        meeting_id: meeting.meeting_id,
+        access_level: accessLevel,
+      }),
+    });
+
+    if (!response.ok) {
+      // Handle error, maybe show a toast
+      console.error("Failed to update access level: ", response.statusText);
+      // Re-fetch to get the old state back
+      fetchMeeting();
+    } else {
+      // Optimistically update the state
+      setMeeting((prev) =>
+        prev ? { ...prev, access_level: accessLevel } : null
+      );
+    }
+  };
+
+  const handleStopBot = async () => {
+    if (!meeting) return;
+
+    try {
+      const response = await fetch("/api/stop-bot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ meeting_id: meeting.meeting_id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Failed to stop the bot.");
+      } else {
+        // Re-fetch to update the status
+        fetchMeeting();
+      }
+    } catch (err) {
+      setError("An unexpected error occurred while stopping the bot.");
+    }
   };
 
   if (loading) {
@@ -116,14 +177,29 @@ export default function SummaryPage({
       case "APPROVED":
         return <ApprovedMinutesView meeting={meeting} />;
       default:
-        return <MeetingStatusView meeting={meeting} />;
+        return (
+          <MeetingStatusView
+            meeting={meeting}
+            isOwner={isOwner}
+            onStopBot={handleStopBot}
+          />
+        );
     }
   };
 
   return (
     <div className="py-10">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">{meeting.meeting_name}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">{meeting.meeting_name}</h1>
+          {meeting && (
+            <SharePopover
+              meeting={meeting}
+              onAccessLevelChange={handleAccessLevelChange}
+              isOwner={isOwner}
+            />
+          )}
+        </div>
         <Button
           onClick={handleRefresh}
           variant="outline"

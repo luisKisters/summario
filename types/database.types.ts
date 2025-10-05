@@ -26,7 +26,7 @@ export type Database = {
           participants: Json | null;
           raw_transcript: string | null;
           scheduled_start_datetime: string | null;
-          share_permissions: string | null;
+          access_level: Enums<"meeting_access_level">;
           skribby_bot_id: string;
           status: string;
           structured_protocol: Json | null;
@@ -44,7 +44,7 @@ export type Database = {
           participants?: Json | null;
           raw_transcript?: string | null;
           scheduled_start_datetime?: string | null;
-          share_permissions?: string | null;
+          access_level?: Enums<"meeting_access_level">;
           skribby_bot_id: string;
           status?: string;
           structured_protocol?: Json | null;
@@ -62,7 +62,7 @@ export type Database = {
           participants?: Json | null;
           raw_transcript?: string | null;
           scheduled_start_datetime?: string | null;
-          share_permissions?: string | null;
+          access_level?: Enums<"meeting_access_level">;
           skribby_bot_id?: string;
           status?: string;
           structured_protocol?: Json | null;
@@ -123,7 +123,12 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      meeting_access_level:
+        | "PRIVATE"
+        | "VIEWER"
+        | "CONTRIBUTOR"
+        | "EDITOR"
+        | "OWNER";
     };
     CompositeTypes: {
       [_ in never]: never;

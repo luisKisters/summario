@@ -10,36 +10,22 @@ type Meeting = Tables<"meetings">;
 
 interface MeetingStatusViewProps {
   meeting: Meeting;
+  isOwner: boolean;
+  onStopBot: () => void;
 }
 
-export default function MeetingStatusView({ meeting }: MeetingStatusViewProps) {
+export default function MeetingStatusView({
+  meeting,
+  isOwner,
+  onStopBot,
+}: MeetingStatusViewProps) {
   const router = useRouter();
 
-  // Removed Edit Setup: bots cannot be edited after creation
-
-  const isStoppable = [
-    "SCHEDULED",
-    "JOINING",
-    "RECORDING",
-    "PROCESSING",
-  ].includes(meeting.status);
-
-  const handleStopBot = async () => {
-    try {
-      const res = await fetch("/api/stop-bot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meeting_id: meeting.meeting_id }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to stop bot");
-      }
-    } catch (e) {
-      // Non-blocking; could add a toast here
-      console.error(e);
-    }
-  };
+  const isStoppable =
+    isOwner &&
+    ["SCHEDULED", "JOINING", "RECORDING", "PROCESSING"].includes(
+      meeting.status
+    );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -47,10 +33,8 @@ export default function MeetingStatusView({ meeting }: MeetingStatusViewProps) {
         <MultiStepLoader
           currentStatus={meeting.status}
           stoppable={isStoppable}
-          onStop={handleStopBot}
+          onStop={onStopBot}
         />
-
-        {/* Stop button now appears in MultiStepLoader under current step when applicable */}
 
         {meeting.status === "FAILED" && meeting.error_message && (
           <div className="p-4 border border-red-200 rounded-lg bg-red-50">

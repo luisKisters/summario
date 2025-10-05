@@ -1,5 +1,7 @@
 # Copilot Instructions
 
+TO GET LOGS USE CONSOLE NINJA MCP SERVER
+
 ## UI/Component Guidelines
 
 - Use shadcn-ui@latest instead of creating custom components, if there is a component available in shadcn-ui that fits the use case
