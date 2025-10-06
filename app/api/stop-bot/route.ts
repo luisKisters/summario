@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
 
     if (!resp.ok) {
       const text = await resp.text();
+      console.error("Error stopping bot:", text, "status:", resp.status);
       return NextResponse.json(
         { error: `Failed to stop bot: ${text || resp.statusText}` },
         { status: 502 }

@@ -173,24 +173,20 @@ export default function SummaryPage({
   const handleStopBot = async () => {
     if (!meeting || userRole !== "OWNER") return;
 
-    try {
-      const response = await fetch("/api/stop-bot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ meeting_id: meeting.meeting_id }),
-      });
+    const response = await fetch("/api/stop-bot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ meeting_id: meeting.meeting_id }),
+    });
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || "Failed to stop the bot.");
-      } else {
-        fetchMeeting();
-      }
-    } catch (err) {
-      setError("An unexpected error occurred while stopping the bot.");
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || "Failed to stop the bot.");
     }
+
+    fetchMeeting();
   };
 
   if (loading) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Navbar } from "@/components/layout/Navbar";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const defaultUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -38,6 +39,7 @@ export default function RootLayout({
           <main className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
             {children}
           </main>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

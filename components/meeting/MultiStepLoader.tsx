@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // User-facing steps for live meeting status
 const STEPS = [
@@ -46,6 +47,26 @@ export default function MultiStepLoader({
   const currentStepIndex = STEPS.findIndex((step) => step.key === mappedStatus);
   const isFailedOverall = mappedStatus === "Failed";
   const isScheduledOnly = mappedStatus === "Scheduled";
+
+  const handleStop = async () => {
+    try {
+      await onStop?.();
+    } catch (error: any) {
+      // Check if this is the specific validation error about bot state
+      if (
+        error?.message?.includes(
+          "Meeting bot is not joining or recording state"
+        )
+      ) {
+        toast.error(
+          "Cannot stop the bot at this time. The bot must be joining or recording to be stopped."
+        );
+      } else {
+        toast.error("Failed to stop the bot. Please try again.");
+      }
+      console.error("Error stopping bot:", error);
+    }
+  };
 
   return (
     <div className={cn("w-full", className)}>
@@ -106,7 +127,11 @@ export default function MultiStepLoader({
                 {/* Stop button under current step, only when stoppable */}
                 {isCurrent && stoppable && !isFailedCurrent && onStop && (
                   <div className="mt-3">
-                    <Button variant="destructive" size="sm" onClick={onStop}>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleStop}
+                    >
                       Stop Bot
                     </Button>
                   </div>
