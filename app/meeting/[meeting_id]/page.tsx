@@ -48,8 +48,6 @@ export default function SummaryPage({
         data: { user },
       } = await supabase.auth.getUser();
 
-      console.log("Auth user:", user);
-
       let { data, error: meetingError } = await supabase
         .from("meetings")
         .select("*")
@@ -87,10 +85,6 @@ export default function SummaryPage({
 
         // Determine user role
         if (user && data.user_id === user.id) {
-          console.log("Setting role to OWNER", {
-            userId: user.id,
-            meetingUserId: data.user_id,
-          });
           setUserRole("OWNER");
         } else if (data.access_level === "PRIVATE") {
           // Private meetings require authentication
@@ -225,13 +219,6 @@ export default function SummaryPage({
 
   const canEditMinutes = userRole === "OWNER" || userRole === "EDITOR";
   const canEditAgenda = canEditMinutes || userRole === "COLLABORATOR";
-
-  console.log("Main Page Debug:", {
-    userRole,
-    canEditMinutes,
-    canEditAgenda,
-    meetingStatus: meeting?.status,
-  });
 
   const renderView = () => {
     switch (meeting.status) {

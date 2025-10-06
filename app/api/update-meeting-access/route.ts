@@ -46,8 +46,6 @@ export async function POST(req: NextRequest) {
     .update({ access_level })
     .eq("meeting_id", meeting_id);
 
-  console.log("Update access level error:", { updateError });
-
   if (updateError) {
     return NextResponse.json(
       { error: `Failed to update access level: ${updateError.message}` },

@@ -296,11 +296,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Make the POST request to the Skribby API
-    console.log(
-      "Sending request to Skribby API with payload:",
-      JSON.stringify(skribbyPayload, null, 2)
-    );
-
     const skribbyResponse = await fetch(
       "https://platform.skribby.io/api/v1/bot",
       {

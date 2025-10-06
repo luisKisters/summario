@@ -7,8 +7,6 @@ import { useState } from "react";
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log(`URL: ${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`);
-
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     const supabase = createClient();

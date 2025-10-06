@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
   // Always acknowledge quickly per PRD
   try {
     const payload = (await request.json()) as SkribbyWebhookPayload;
-    console.log("Skribby Callback Payload: ", payload);
     const skribbyBotId = payload?.bot_id;
 
     if (!skribbyBotId) {
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
     const mappedStatus = mapSkribbyStatusToMeetingStatus(newStatusRaw);
 
     if (!mappedStatus) {
-      console.log(`Ignoring unhandled status: ${newStatusRaw}`);
       return NextResponse.json({
         status: "received",
         note: "unhandled status",
@@ -160,19 +158,11 @@ async function set_transcript(bot_id: string, meeting_id: string) {
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     }/api/generate-summary`;
 
-    console.log("Triggering summary generation for meeting:", meeting_id);
-    console.log("Summary URL:", summaryUrl);
-
     const generateSummaryResponse = await fetch(summaryUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ meeting_id: meeting_id }),
     });
-
-    console.log(
-      "Summary generation response status:",
-      generateSummaryResponse.status
-    );
 
     if (!generateSummaryResponse.ok) {
       const errorText = await generateSummaryResponse.text();

@@ -8,8 +8,6 @@ export async function GET(request: NextRequest) {
   const redirectTo = requestUrl.searchParams.get("next") ?? "/meetings";
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  console.log("Auth callback with code:", code, "redirectTo:", redirectTo);
-
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
