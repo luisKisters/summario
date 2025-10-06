@@ -28,6 +28,11 @@ export default function EditableAgenda({
   className,
   editable = true,
 }: EditableAgendaProps) {
+  console.log("EditableAgenda Debug:", {
+    editable,
+    meetingStatus: meeting.status,
+  });
+
   // Parse agenda topics from JSON
   const initialItems = useMemo(() => {
     const arr = (meeting.agenda_topics as unknown as AgendaItem[]) || [];

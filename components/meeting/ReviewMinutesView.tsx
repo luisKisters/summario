@@ -20,9 +20,13 @@ type Meeting = Tables<"meetings">;
 
 interface ReviewMinutesViewProps {
   meeting: Meeting;
+  isEditable?: boolean;
 }
 
-export default function ReviewMinutesView({ meeting }: ReviewMinutesViewProps) {
+export default function ReviewMinutesView({
+  meeting,
+  isEditable = true,
+}: ReviewMinutesViewProps) {
   const router = useRouter();
   const editorRef = useRef<TuiEditorRef>(null);
   const initialContent =
@@ -113,47 +117,67 @@ export default function ReviewMinutesView({ meeting }: ReviewMinutesViewProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* WYSIWYG Editor */}
-        <div className="space-y-2 mb-6">
-          <Label>Edit Your Meeting Minutes</Label>
-          <TuiEditor
-            ref={editorRef}
-            initialValue={initialContent}
-            height="500px"
-            placeholder="Edit your meeting minutes here..."
-            onChange={setEditedContent}
-          />
-        </div>
+        {isEditable ? (
+          <>
+            {/* WYSIWYG Editor */}
+            <div className="space-y-2 mb-6">
+              <Label>Edit Your Meeting Minutes</Label>
+              <TuiEditor
+                ref={editorRef}
+                initialValue={initialContent}
+                height="500px"
+                placeholder="Edit your meeting minutes here..."
+                onChange={setEditedContent}
+              />
+            </div>
 
-        {/* AI Edit Section */}
-        <div className="space-y-2">
-          <Label htmlFor="ai-edit">AI Edit Instructions</Label>
-          <div className="flex gap-2">
-            <Input
-              id="ai-edit"
-              value={aiEditInstruction}
-              onChange={(e) => setAiEditInstruction(e.target.value)}
-              placeholder="Describe the changes you want the AI to make..."
-              disabled={isAiEditing}
-            />
-            <Button
-              onClick={handleAiEdit}
-              disabled={isAiEditing || !aiEditInstruction.trim()}
-              variant="secondary"
-            >
-              {isAiEditing ? "Applying..." : "Apply AI Edit"}
-            </Button>
+            {/* AI Edit Section */}
+            <div className="space-y-2">
+              <Label htmlFor="ai-edit">AI Edit Instructions</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="ai-edit"
+                  value={aiEditInstruction}
+                  onChange={(e) => setAiEditInstruction(e.target.value)}
+                  placeholder="Describe the changes you want the AI to make..."
+                  disabled={isAiEditing}
+                />
+                <Button
+                  onClick={handleAiEdit}
+                  disabled={isAiEditing || !aiEditInstruction.trim()}
+                  variant="secondary"
+                >
+                  {isAiEditing ? "Applying..." : "Apply AI Edit"}
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Read-only view */
+          <div className="space-y-2">
+            <Label>Meeting Minutes</Label>
+            <div className="prose max-w-none">
+              <pre className="whitespace-pre-wrap font-sans">
+                {initialContent}
+              </pre>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
-      <CardFooter className="flex justify-end gap-2">
-        <Button variant="outline" onClick={handleDiscard} disabled={isLoading}>
-          Discard Changes
-        </Button>
-        <Button onClick={handleApprove} disabled={isLoading}>
-          {isLoading ? "Approving..." : "Approve & Save Minutes"}
-        </Button>
-      </CardFooter>
+      {isEditable && (
+        <CardFooter className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDiscard}
+            disabled={isLoading}
+          >
+            Discard Changes
+          </Button>
+          <Button onClick={handleApprove} disabled={isLoading}>
+            {isLoading ? "Approving..." : "Approve & Save Minutes"}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

@@ -126,7 +126,7 @@ export type Database = {
       meeting_access_level:
         | "PRIVATE"
         | "VIEWER"
-        | "CONTRIBUTOR"
+        | "COLLABORATOR"
         | "EDITOR"
         | "OWNER";
     };

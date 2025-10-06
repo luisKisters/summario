@@ -7,11 +7,14 @@ import ReviewMinutesView from "@/components/meeting/ReviewMinutesView";
 import { Button } from "@/components/ui/button";
 import SharePopover from "@/components/meeting/SharePopover";
 import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Tables, Enums } from "@/types/database.types";
+import AccessDenied from "@/components/meeting/AccessDenied";
+import NotFound from "./not-found";
 
 type Meeting = Tables<"meetings">;
 type AccessLevel = Enums<"meeting_access_level">;
+type UserRole = "OWNER" | "EDITOR" | "COLLABORATOR" | "VIEWER" | "NONE";
 
 export default function SummaryPage({
   params,
@@ -23,60 +26,115 @@ export default function SummaryPage({
   const [error, setError] = useState<string | null>(null);
   const [meetingId, setMeetingId] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>("NONE");
 
-  // Initialize meeting ID from params
   useEffect(() => {
     params.then(({ meeting_id }) => {
       setMeetingId(meeting_id);
     });
   }, [params]);
 
-  // Fetch meeting data
-  const fetchMeeting = async (showRefreshing = false) => {
-    if (!meetingId) return;
+  const fetchMeeting = useCallback(
+    async (showRefreshing = false) => {
+      if (!meetingId) return;
 
-    if (showRefreshing) {
-      setIsRefreshing(true);
-    }
+      if (showRefreshing) {
+        setIsRefreshing(true);
+      }
 
-    try {
+      setLoading(true);
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
+      console.log("Auth user:", user);
+
+      let { data, error: meetingError } = await supabase
         .from("meetings")
-        .select("*, meeting_name")
+        .select("*")
         .eq("meeting_id", meetingId)
         .single();
 
-      if (error) {
-        setError(error.message);
-      } else {
-        setMeeting(data);
-        if (user && data.user_id === user.id) {
-          setIsOwner(true);
-        }
-        setError(null);
-      }
-    } catch (err) {
-      setError("Failed to fetch meeting data");
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+      if (meetingError) {
+        // Check if the meeting exists at all using the public existence view
+        const { data: existenceData, error: existenceError } = await (
+          supabase as any
+        )
+          .from("meetings_public_exists")
+          .select("meeting_id")
+          .eq("meeting_id", meetingId)
+          .single();
 
-  // Initial load
+        if (existenceError) {
+          // Meeting does not exist - 404
+          setError("404");
+        } else {
+          // Meeting exists but user has no access - Access Denied
+          setError("ACCESS_DENIED");
+        }
+        setMeeting(null);
+        setLoading(false);
+        if (showRefreshing) {
+          setIsRefreshing(false);
+        }
+        return;
+      }
+
+      if (data) {
+        setMeeting(data);
+        setError(null);
+
+        // Determine user role
+        if (user && data.user_id === user.id) {
+          console.log("Setting role to OWNER", {
+            userId: user.id,
+            meetingUserId: data.user_id,
+          });
+          setUserRole("OWNER");
+        } else if (data.access_level === "PRIVATE") {
+          // Private meetings require authentication
+          if (!user) {
+            setUserRole("NONE");
+            setError("ACCESS_DENIED");
+            setMeeting(null);
+            return;
+          }
+          setUserRole("NONE"); // Should not reach here due to RLS, but fallback
+        } else if (data.access_level) {
+          // Public meetings - assign role based on access level
+          switch (data.access_level) {
+            case "EDITOR":
+              setUserRole("EDITOR");
+              break;
+            case "COLLABORATOR":
+              setUserRole("COLLABORATOR");
+              break;
+            case "VIEWER":
+              setUserRole("VIEWER");
+              break;
+            default:
+              setUserRole("VIEWER"); // Default to viewer for any other case
+          }
+        } else {
+          setUserRole("VIEWER"); // Fallback for meetings without access_level
+        }
+      }
+
+      setLoading(false);
+      if (showRefreshing) {
+        setIsRefreshing(false);
+      }
+    },
+    [meetingId]
+  );
+
   useEffect(() => {
     if (meetingId) {
       fetchMeeting();
     }
-  }, [meetingId]);
+  }, [meetingId, fetchMeeting]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!meetingId) return;
 
@@ -85,15 +143,19 @@ export default function SummaryPage({
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [meetingId]);
+  }, [meetingId, fetchMeeting]);
 
-  // Manual refresh
   const handleRefresh = () => {
     fetchMeeting(true);
   };
 
   const handleAccessLevelChange = async (accessLevel: AccessLevel) => {
-    if (!meeting) return;
+    if (!meeting || userRole !== "OWNER") return;
+
+    const originalAccessLevel = meeting.access_level;
+    setMeeting((prev) =>
+      prev ? { ...prev, access_level: accessLevel } : null
+    );
 
     const response = await fetch("/api/update-meeting-access", {
       method: "POST",
@@ -107,20 +169,15 @@ export default function SummaryPage({
     });
 
     if (!response.ok) {
-      // Handle error, maybe show a toast
-      console.error("Failed to update access level: ", response.statusText);
-      // Re-fetch to get the old state back
-      fetchMeeting();
-    } else {
-      // Optimistically update the state
+      console.error("Failed to update access level:", response.statusText);
       setMeeting((prev) =>
-        prev ? { ...prev, access_level: accessLevel } : null
+        prev ? { ...prev, access_level: originalAccessLevel } : null
       );
     }
   };
 
   const handleStopBot = async () => {
-    if (!meeting) return;
+    if (!meeting || userRole !== "OWNER") return;
 
     try {
       const response = await fetch("/api/stop-bot", {
@@ -135,7 +192,6 @@ export default function SummaryPage({
         const data = await response.json();
         setError(data.error || "Failed to stop the bot.");
       } else {
-        // Re-fetch to update the status
         fetchMeeting();
       }
     } catch (err) {
@@ -154,34 +210,44 @@ export default function SummaryPage({
     );
   }
 
-  if (error || !meeting) {
-    return (
-      <div className="py-10">
-        <div className="text-center">
-          <p className="text-destructive mb-4">
-            Error: {error || "Meeting not found"}
-          </p>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+  if (error === "404") {
+    return <NotFound />;
   }
+
+  if (error === "ACCESS_DENIED" || !meeting) {
+    return <AccessDenied />;
+  }
+
+  // Additional check for unauthorized access
+  if (userRole === "NONE") {
+    return <AccessDenied />;
+  }
+
+  const canEditMinutes = userRole === "OWNER" || userRole === "EDITOR";
+  const canEditAgenda = canEditMinutes || userRole === "COLLABORATOR";
+
+  console.log("Main Page Debug:", {
+    userRole,
+    canEditMinutes,
+    canEditAgenda,
+    meetingStatus: meeting?.status,
+  });
 
   const renderView = () => {
     switch (meeting.status) {
       case "SUMMARIZED":
-        return <ReviewMinutesView meeting={meeting} />;
+        return (
+          <ReviewMinutesView meeting={meeting} isEditable={canEditMinutes} />
+        );
       case "APPROVED":
         return <ApprovedMinutesView meeting={meeting} />;
       default:
         return (
           <MeetingStatusView
             meeting={meeting}
-            isOwner={isOwner}
+            isOwner={userRole === "OWNER"}
             onStopBot={handleStopBot}
+            canEditAgenda={canEditAgenda}
           />
         );
     }
@@ -192,13 +258,11 @@ export default function SummaryPage({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold">{meeting.meeting_name}</h1>
-          {meeting && (
-            <SharePopover
-              meeting={meeting}
-              onAccessLevelChange={handleAccessLevelChange}
-              isOwner={isOwner}
-            />
-          )}
+          <SharePopover
+            meeting={meeting}
+            onAccessLevelChange={handleAccessLevelChange}
+            isOwner={userRole === "OWNER"}
+          />
         </div>
         <Button
           onClick={handleRefresh}

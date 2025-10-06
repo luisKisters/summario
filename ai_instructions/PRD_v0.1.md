@@ -101,40 +101,38 @@ implement consistent good looking theme
 
   - **Task:** Update the `meetings` table to support granular access levels and implement the corresponding Row-Level Security policies.
   - **Details:**
-    - The `share_permissions` column will be renamed to `access_level`.
-    - This column will store the sharing status of the meeting, using one of the following values: `PRIVATE`, `VIEWER`, `CONTRIBUTOR`, `EDITOR`, `OWNER`.
+    - A new `access_level` column will be added to the `meetings` table.
+    - This column will store the sharing status of the meeting, using one of the following values: `PRIVATE`, `VIEWER`, `COLLABORATOR`, `EDITOR`, `OWNER`.
   - **SQL for RLS Policy:**
 
     ```sql
     -- First, create a new type for the access levels to ensure data integrity.
-    CREATE TYPE meeting_access_level AS ENUM ('PRIVATE', 'VIEWER', 'CONTRIBUTOR', 'EDITOR', 'OWNER');
+    CREATE TYPE meeting_access_level AS ENUM ('PRIVATE', 'VIEWER', 'COLLABORATOR', 'EDITOR', 'OWNER');
 
-    -- Alter the table to use the new type and rename the column.
-    -- Note: This migration assumes you will handle data conversion from the old values.
+    -- Alter the table to use the new type.
     ALTER TABLE public.meetings
       ADD COLUMN access_level meeting_access_level DEFAULT 'PRIVATE' NOT NULL;
 
-    -- This policy allows public read access for any non-private meeting.
-    -- More specific edit rights will be handled in the application logic and API endpoints.
-    CREATE POLICY "Public can view shared meetings."
-    ON public.meetings
-    FOR SELECT
-    USING (access_level <> 'PRIVATE');
-
-    -- Update existing owner policy to ensure owners can always access their meetings.
-    -- (Assuming a policy like this already exists)
+    -- This policy allows owners to have unrestricted access.
     CREATE POLICY "Owners can manage their own meetings"
     ON public.meetings
     FOR ALL
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
+
+    -- This policy allows any authenticated user to view a meeting if it's not private.
+    -- The application UI will be responsible for enforcing finer-grained permissions (e.g., editing).
+    CREATE POLICY "Users can view non-private meetings"
+    ON public.meetings
+    FOR SELECT
+    USING (access_level <> 'PRIVATE');
     ```
 
 - **Step 7.3: Implement Sharing UI & API**
 
   - **Task:** Add a "Share" button to the main meeting page, which opens a popover to manage access levels, and create the backend logic.
   - **UI (`/app/meeting/[meeting_id]/page.tsx`):**
-    - A "Share" `Button` should be prominently displayed at the top of the meeting page, next to the meeting title. This ensures it is available at all stages of the meeting lifecycle.
+    - A "Share" `Button` should be prominently displayed at the top of the meeting page.
   - **Component (`/components/meeting/SharePopover.tsx`):**
     - Clicking the "Share" button will open a `Popover`.
     - For meeting owners:
@@ -142,21 +140,26 @@ implement consistent good looking theme
       - When toggled on, the access level defaults to `VIEWER`.
       - A `RadioGroup` appears, allowing the owner to select the access level:
         - **Private**: "Only you can access."
-        - **Viewer**: "Anyone with the link can view."
-        - **Contributor**: "Anyone with the link can edit the agenda."
-        - **Editor**: "Anyone with the link can edit the agenda and minutes."
-        - **Owner**: "Full access to manage the meeting."
-    - For non-owners, only the shareable URL and a "Copy Link" button are visible.
+        - **Viewer**: "Anyone with the link can view the agenda and minutes."
+        - **Collaborator**: "Anyone with the link can view and edit the agenda."
+        - **Editor**: "Anyone with the link can view and edit the agenda and minutes."
+    - For non-owners, the UI will be read-only, showing the current access level.
     - The `RadioGroup`'s state should reflect the current `meeting.access_level`.
     - Below the options, show a read-only `Input` with the shareable URL (`<your-domain>/meeting/[meeting_id]`), along with a "Copy Link" button.
   - **API Route (`/api/update-meeting-access`):**
     - Create a new `POST` endpoint that accepts `{ meeting_id: string, access_level: string }`.
     - This endpoint will update the `access_level` column for the specified meeting.
-    - **Security:** Ensure only the meeting owner can call this endpoint to change the access level.
+    - **Security:** Ensure only the meeting owner can call this endpoint.
 
-- **Step 7.4: Handle Unauthenticated Access**
-  - **Task:** Modify the data fetching logic on the `/meeting/[meeting_id]` page to handle public vs. private minutes for logged-out users.
-  - **Logic in `SummaryPage` data fetching:**
-    - When fetching the meeting, if the initial query returns an error (which it will for a non-owner due to RLS), perform a _second_ query using the `supabase.anon.key`.
-    - This second query should specifically select the meeting _only if_ `share_permissions = 'PUBLIC'`.
-    - If this second query also fails, it means the meeting is private and the user doesn't have access. In this case, render an `<AccessDenied />` component instead of the generic "Meeting not found" error. This component should explain that the meeting is private and prompt the user to log in.
+- **Step 7.4: Handle Role-Based Access**
+  - **Task:** Modify the data fetching and UI rendering on the `/meeting/[meeting_id]` page to enforce permissions for different user roles.
+  - **Logic in `[meeting_id]/page.tsx`:**
+    - **Data Fetching:**
+      - Fetch the meeting details. The RLS policies will ensure that only authorized users can retrieve the meeting record.
+      - If no meeting is found, it means the meeting is private or the user lacks access. Render an `<AccessDenied />` component that prompts the user to log in or request access from the owner.
+    - **UI Rendering based on Role:**
+      - **Owner:** Has full control. Can edit the agenda, edit the minutes, manage sharing settings, and perform destructive actions like stopping the bot or deleting the meeting.
+      - **Editor:** Can view everything. Can edit the agenda (`EditableAgenda`) and the minutes (`ReviewMinutesView` with WYSIWYG editor). Cannot change sharing settings or delete the meeting.
+      - **Collaborator:** Can view everything (agenda, minutes). Can only edit the agenda (`EditableAgenda`). The minutes view (`ReviewMinutesView` or `ApprovedMinutesView`) will be read-only.
+      - **Viewer:** Can view everything in a read-only state. No editing capabilities.
+      - **Unauthenticated User:** If a meeting is not `PRIVATE`, an unauthenticated user has the same permissions as a `Viewer`. They can see the meeting details but cannot interact with any controls. If the meeting is `PRIVATE`, they will be blocked by RLS and see the `<AccessDenied />` page.

@@ -162,8 +162,6 @@ ${participantNames}
 ${user.example_protocol}
 `;
 
-    console.log("PROMPTT: ", prompt);
-
     // Make the API call to Gemini with structured output
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",

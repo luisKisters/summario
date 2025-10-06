@@ -12,12 +12,14 @@ interface MeetingStatusViewProps {
   meeting: Meeting;
   isOwner: boolean;
   onStopBot: () => void;
+  canEditAgenda?: boolean;
 }
 
 export default function MeetingStatusView({
   meeting,
   isOwner,
   onStopBot,
+  canEditAgenda = true,
 }: MeetingStatusViewProps) {
   const router = useRouter();
 
@@ -26,6 +28,13 @@ export default function MeetingStatusView({
     ["SCHEDULED", "JOINING", "RECORDING", "PROCESSING"].includes(
       meeting.status
     );
+
+  console.log("MeetingStatusView Debug:", {
+    isOwner,
+    meetingStatus: meeting.status,
+    isStoppable,
+    canEditAgenda,
+  });
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -44,7 +53,7 @@ export default function MeetingStatusView({
         )}
       </div>
 
-      <EditableAgenda meeting={meeting} />
+      <EditableAgenda meeting={meeting} editable={canEditAgenda} />
     </div>
   );
 }

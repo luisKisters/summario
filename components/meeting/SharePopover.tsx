@@ -105,9 +105,9 @@ export default function SharePopover({
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="CONTRIBUTOR" id="contributor" />
-                    <Label htmlFor="contributor">
-                      Contributor
+                    <RadioGroupItem value="COLLABORATOR" id="collaborator" />
+                    <Label htmlFor="collaborator">
+                      Collaborator
                       <p className="text-xs text-muted-foreground">
                         Anyone with the link can edit the agenda.
                       </p>
