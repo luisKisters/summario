@@ -48,7 +48,7 @@ export default function SummaryPage({
         data: { user },
       } = await supabase.auth.getUser();
 
-      let { data, error: meetingError } = await supabase
+      const { data, error: meetingError } = await supabase
         .from("meetings")
         .select("*")
         .eq("meeting_id", meetingId)
