@@ -8,7 +8,8 @@ always use pnpm, try to avoid using npx and use pnpm dlx instead.
 
 # Cursors AI Development Guidelines for Summario
 
-This document outlines the core rules and conventions for developing the Summario project. Adhering to these guidelines is crucial for maintaining code quality, cownsistency, and a clean architecture. **Read carefully and follow every instruction.**
+This document outlines the core rules
+ and conventions for developing the Summario project. Adhering to these guidelines is crucial for maintaining code quality, cownsistency, and a clean architecture. **Read carefully and follow every instruction.**
 
 ## 1. Design & Styling (Tailwind CSS & shadcn/ui)
 
@@ -27,6 +28,7 @@ This document outlines the core rules and conventions for developing the Summari
     - `--muted-foreground`: `#94A3B8`
     - `--border`: `#334155`
 - **Component-First with shadcn/ui:** Before creating any custom UI component, check if a suitable, equivalent component exists in `shadcn/ui`. **Prefer shadcn/ui components by default.** Only build custom components for functionality not explicitly covered by shadcn/ui.
+- **Use shadcn MCP Server:** Always fetch the shadcn MCP server when working with UI components and creating UI to ensure components are correctly integrated.
 - **Layout with Flexbox & Grid:** Use Tailwind's Flexbox (`flex`, `justify-*`, `items-*`, `gap-*`) and Grid (`grid`, `grid-cols-*`, `gap-*`) utilities for all layout purposes. Avoid floats or older layout techniques.
 - **Responsive Design:** All UI components and pages must be fully responsive and provide an excellent user experience on mobile devices. Utilize Tailwind's responsive prefixes (`sm:`, `md:`, `lg:`) to adapt styles.
 - **Minimalism & Usability:** Focus on a clean, minimal design. Avoid unnecessary animations or complex visual elements. The primary goal is excellent usability and clarity.
@@ -83,6 +85,7 @@ This document outlines the core rules and conventions for developing the Summari
     - `--muted-foreground`: `#94A3B8`
     - `--border`: `#334155`
 - **Component-First with shadcn/ui:** Before creating any custom UI component, check if a suitable, equivalent component exists in `shadcn/ui`. **Prefer shadcn/ui components by default.** Only build custom components for functionality not explicitly covered by shadcn/ui.
+- **Use shadcn MCP Server:** Always fetch the shadcn MCP server when working with UI components and creating UI to ensure components are correctly integrated.
 - **Layout with Flexbox & Grid:** Use Tailwind's Flexbox (`flex`, `justify-*`, `items-*`, `gap-*`) and Grid (`grid`, `grid-cols-*`, `gap-*`) utilities for all layout purposes. Avoid floats or older layout techniques.
 - **Responsive Design:** All UI components and pages must be fully responsive and provide an excellent user experience on mobile devices. Utilize Tailwind's responsive prefixes (`sm:`, `md:`, `lg:`) to adapt styles.
 - **Minimalism & Usability:** Focus on a clean, minimal design. Avoid unnecessary animations or complex visual elements. The primary goal is excellent usability and clarity.
