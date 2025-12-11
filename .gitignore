@@ -43,3 +43,5 @@ next-env.d.ts
 
 # Gemini CLI settings (contains sensitive API keys)
 .gemini/settings.json
+
+/.pnpm-store/
