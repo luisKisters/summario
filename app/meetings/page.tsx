@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -18,24 +17,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { Tables } from "@/types/database.types";
 import {
   Plus,
   Link2,
-  ArrowRight,
-  Info,
-  Clock,
-  FileText,
-  Timer,
-  AlertCircle,
-  Search,
   CalendarIcon,
-  X,
   LayoutList,
   LayoutGrid,
   Check,
   CircleAlert,
+  ChevronDown,
+  ListFilter,
+  SlidersHorizontal,
+  AlertCircle,
+  Clock,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { format } from "date-fns";
@@ -44,15 +48,7 @@ import { cn } from "@/lib/utils";
 
 type Meeting = Tables<"meetings">;
 type ViewMode = "list" | "cards";
-
-interface MeetingStats {
-  totalTranscribedMinutes: number;
-  maxTranscribedMinutes: number;
-  meetingsSummarized: number;
-  estimatedTimeSavedMinutes: number;
-  awaitingApproval: number;
-  totalMeetings: number;
-}
+type TemplateFilter = "all" | string;
 
 function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
@@ -60,6 +56,142 @@ function formatDuration(minutes: number): string {
   if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
   if (hours > 0) return `${hours}h`;
   return `${mins}min`;
+}
+
+// Placeholder templates for future implementation
+const TEMPLATE_OPTIONS = [
+  { id: "all", label: "All meetings", icon: "📋" },
+  { id: "standup", label: "Standup", icon: "🏃" },
+  { id: "planning", label: "Planning", icon: "📅" },
+  { id: "retrospective", label: "Retrospective", icon: "🔄" },
+  { id: "one-on-one", label: "1:1", icon: "👥" },
+];
+
+// Usage limits (in minutes) - adjust based on plan
+const MONTHLY_LIMIT_MINUTES = 600; // 10 hours
+
+interface UsageStats {
+  usedMinutes: number;
+  limitMinutes: number;
+  meetingsSummarized: number;
+  timeSavedMinutes: number;
+}
+
+function calculateUsageStats(meetings: Meeting[]): UsageStats {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const recentMeetings = meetings.filter(
+    (m) => new Date(m.created_at) >= thirtyDaysAgo
+  );
+
+  let usedMinutes = 0;
+  let meetingsSummarized = 0;
+
+  recentMeetings.forEach((meeting) => {
+    const transcriptLength = meeting.raw_transcript?.length || 0;
+    // Estimate ~500 chars per minute of transcript
+    const estimatedMinutes = Math.max(5, Math.min(180, transcriptLength / 500));
+    usedMinutes += estimatedMinutes;
+
+    const status = meeting.status?.toLowerCase() || "";
+    if (status === "approved" || status === "summarized") {
+      meetingsSummarized++;
+    }
+  });
+
+  // Estimate 30min saved per summarized meeting (reading summary vs full transcript)
+  const timeSavedMinutes = meetingsSummarized * 30;
+
+  return {
+    usedMinutes: Math.round(usedMinutes),
+    limitMinutes: MONTHLY_LIMIT_MINUTES,
+    meetingsSummarized,
+    timeSavedMinutes,
+  };
+}
+
+function UsageStatsBar({ meetings }: { meetings: Meeting[] }) {
+  const stats = calculateUsageStats(meetings);
+  const usagePercentage = Math.min(
+    100,
+    (stats.usedMinutes / stats.limitMinutes) * 100
+  );
+  const remainingMinutes = Math.max(0, stats.limitMinutes - stats.usedMinutes);
+  const remainingHours = Math.floor(remainingMinutes / 60);
+  const remainingMins = remainingMinutes % 60;
+
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+          {/* Usage Progress */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Monthly Usage</span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {formatDuration(stats.usedMinutes)} /{" "}
+                {formatDuration(stats.limitMinutes)}
+              </span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  usagePercentage >= 90
+                    ? "bg-destructive"
+                    : usagePercentage >= 70
+                    ? "bg-orange-500"
+                    : "bg-primary"
+                )}
+                style={{ width: `${usagePercentage}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {remainingHours > 0 || remainingMins > 0 ? (
+                <>
+                  <span className="text-foreground font-medium">
+                    {remainingHours}h {remainingMins}min
+                  </span>{" "}
+                  remaining this month
+                </>
+              ) : (
+                <span className="text-destructive">Monthly limit reached</span>
+              )}
+            </p>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-12 bg-border" />
+
+          {/* Stats */}
+          <div className="flex gap-6 sm:gap-8">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
+                <FileText className="h-3.5 w-3.5" />
+                <span className="text-xs">Summarized</span>
+              </div>
+              <p className="text-xl font-semibold">
+                {stats.meetingsSummarized}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="text-xs">Time Saved</span>
+              </div>
+              <p className="text-xl font-semibold">
+                ~{formatDuration(stats.timeSavedMinutes)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function formatDate(dateString: string): string {
@@ -80,75 +212,83 @@ function formatTime(dateString: string): string {
 }
 
 type StatusType =
-  | "summarized"
+  | "approved"
   | "recording"
   | "processing"
   | "pending_review"
   | "error"
-  | "done"
+  | "starting"
   | "scheduled"
   | "unknown";
 
-function getStatusInfo(status: string): {
+interface StatusInfo {
   label: string;
   type: StatusType;
-  borderColor: string;
-} {
+  className: string;
+  showRecordingDot?: boolean;
+}
+
+function getStatusInfo(status: string): StatusInfo {
   const statusLower = status.toLowerCase();
 
-  if (statusLower === "approved" || statusLower === "summarized") {
-    return {
-      label: "Summarized",
-      type: "summarized",
-      borderColor: "border-primary",
-    };
-  }
-  if (statusLower === "done") {
+  if (statusLower === "approved" || statusLower === "done") {
     return {
       label: "Done",
-      type: "done",
-      borderColor: "border-muted-foreground",
+      type: "approved",
+      className: "bg-green-500/15 text-green-600 dark:text-green-400",
     };
   }
   if (statusLower === "recording" || statusLower === "in_call") {
     return {
       label: "Recording",
       type: "recording",
-      borderColor: "border-blue-500",
+      className: "bg-secondary text-secondary-foreground",
+      showRecordingDot: true,
+    };
+  }
+  if (statusLower === "starting" || statusLower === "booting") {
+    return {
+      label: "Starting",
+      type: "starting",
+      className: "bg-secondary text-secondary-foreground",
     };
   }
   if (statusLower === "transcribing" || statusLower === "processing") {
     return {
       label: "Processing",
       type: "processing",
-      borderColor: "border-yellow-500",
+      className: "bg-secondary text-secondary-foreground",
     };
   }
-  if (statusLower === "pending_review") {
+  if (
+    statusLower === "pending_review" ||
+    statusLower === "summarized" ||
+    statusLower === "awaiting_approval"
+  ) {
     return {
-      label: "Pending Review",
+      label: "Requires Approval",
       type: "pending_review",
-      borderColor: "border-orange-500",
+      className: "bg-secondary text-secondary-foreground",
     };
   }
   if (statusLower === "scheduled") {
     return {
       label: "Scheduled",
       type: "scheduled",
-      borderColor: "border-muted-foreground",
+      className: "bg-secondary text-secondary-foreground",
     };
   }
   if (statusLower === "error" || statusLower === "failed") {
     return {
       label: "Error",
       type: "error",
-      borderColor: "border-destructive",
+      className: "bg-destructive/15 text-destructive",
     };
   }
   return {
     label: status || "Unknown",
     type: "unknown",
-    borderColor: "border-muted-foreground",
+    className: "bg-secondary text-secondary-foreground",
   };
 }
 
@@ -158,181 +298,82 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-secondary-foreground",
-        info.borderColor
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+        info.className
       )}
     >
+      {info.showRecordingDot && (
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+        </span>
+      )}
       {info.label}
     </span>
   );
 }
 
-function calculateStats(meetings: Meeting[]): MeetingStats {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+// Date grouping helpers
+type DateGroup = "today" | "yesterday" | "thisWeek" | "thisMonth" | "older";
 
-  const recentMeetings = meetings.filter(
-    (m) => new Date(m.created_at) >= thirtyDaysAgo
-  );
+function getDateGroup(dateString: string): DateGroup {
+  const date = new Date(dateString);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const monthAgo = new Date(today);
+  monthAgo.setDate(monthAgo.getDate() - 30);
 
-  let totalTranscribedMinutes = 0;
-  let meetingsSummarized = 0;
-  let awaitingApproval = 0;
+  if (date >= today) return "today";
+  if (date >= yesterday) return "yesterday";
+  if (date >= weekAgo) return "thisWeek";
+  if (date >= monthAgo) return "thisMonth";
+  return "older";
+}
 
-  recentMeetings.forEach((meeting) => {
-    const transcriptLength = meeting.raw_transcript?.length || 0;
-    const estimatedMinutes = Math.max(
-      30,
-      Math.min(180, transcriptLength / 500)
-    );
-    totalTranscribedMinutes += estimatedMinutes;
+const DATE_GROUP_LABELS: Record<DateGroup, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  thisWeek: "This Week",
+  thisMonth: "This Month",
+  older: "Older",
+};
 
-    const status = meeting.status?.toLowerCase() || "";
-    if (status === "approved" || status === "summarized") {
-      meetingsSummarized++;
-    }
-    if (status === "pending_review") {
-      awaitingApproval++;
-    }
+function groupMeetingsByDate(
+  meetings: Meeting[]
+): { group: DateGroup; meetings: Meeting[] }[] {
+  const groups: Record<DateGroup, Meeting[]> = {
+    today: [],
+    yesterday: [],
+    thisWeek: [],
+    thisMonth: [],
+    older: [],
+  };
+
+  meetings.forEach((meeting) => {
+    const group = getDateGroup(meeting.created_at);
+    groups[group].push(meeting);
   });
 
-  const estimatedTimeSavedMinutes = meetingsSummarized * 30;
+  const orderedGroups: DateGroup[] = [
+    "today",
+    "yesterday",
+    "thisWeek",
+    "thisMonth",
+    "older",
+  ];
 
-  return {
-    totalTranscribedMinutes: Math.round(totalTranscribedMinutes),
-    maxTranscribedMinutes: 600,
-    meetingsSummarized,
-    estimatedTimeSavedMinutes,
-    awaitingApproval,
-    totalMeetings: meetings.length,
-  };
+  return orderedGroups
+    .filter((group) => groups[group].length > 0)
+    .map((group) => ({ group, meetings: groups[group] }));
 }
 
-interface StatItemProps {
-  icon: React.ElementType;
-  label: string;
-  sublabel: string;
-  value: string;
-  suffix?: string;
-  tooltip?: string;
-  action?: { href: string };
-}
-
-function StatItem({
-  icon: Icon,
-  label,
-  sublabel,
-  value,
-  suffix,
-  tooltip,
-  action,
-}: StatItemProps) {
-  const content = (
-    <div className="flex-1 py-4 px-6 flex justify-center">
-      <div className="text-left">
-        <div className="flex items-center justify-end gap-2 text-muted-foreground text-sm">
-          <Icon className="h-4 w-4" />
-          <span>{label}</span>
-          {tooltip && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          {action && <ArrowRight className="h-3.5 w-3.5" />}
-        </div>
-        <p className="text-xs text-muted-foreground mt-0.5">{sublabel}</p>
-        <p className="text-2xl font-semibold mt-2">
-          {value}
-          {suffix && (
-            <span className="text-base font-normal text-muted-foreground">
-              {suffix}
-            </span>
-          )}
-        </p>
-      </div>
-    </div>
-  );
-
-  if (action) {
-    return (
-      <Link
-        href={action.href}
-        className="flex-1 hover:bg-muted/50 transition-colors"
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return content;
-}
-
-function StatsBar({
-  stats,
-  meetings,
-}: {
-  stats: MeetingStats;
-  meetings: Meeting[];
-}) {
-  return (
-    <Card>
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row md:divide-x divide-border">
-          <StatItem
-            icon={Clock}
-            label="Time Transcribed"
-            sublabel="Last 30 days"
-            value={formatDuration(stats.totalTranscribedMinutes)}
-            suffix={` /${formatDuration(stats.maxTranscribedMinutes)}`}
-          />
-          <StatItem
-            icon={FileText}
-            label="Meetings Summarized"
-            sublabel="Last 30 days"
-            value={`${stats.meetingsSummarized}`}
-            suffix=" Meetings"
-          />
-          <StatItem
-            icon={Timer}
-            label="Time Saved"
-            sublabel="Last 30 days"
-            value={`~${formatDuration(stats.estimatedTimeSavedMinutes)}`}
-            tooltip="Estimated time saved by reading AI summaries instead of full transcripts"
-          />
-          <StatItem
-            icon={AlertCircle}
-            label="Awaiting approval"
-            sublabel="Overall"
-            value={`${stats.awaitingApproval}/${stats.totalMeetings}`}
-            suffix=" Meetings"
-            action={
-              stats.awaitingApproval > 0
-                ? {
-                    href: `/meeting/${
-                      meetings.find(
-                        (m) => m.status?.toLowerCase() === "pending_review"
-                      )?.meeting_id || ""
-                    }`,
-                  }
-                : undefined
-            }
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function FilterBar({
-  searchQuery,
-  setSearchQuery,
+function DatabaseHeader({
+  templateFilter,
+  setTemplateFilter,
   dateRange,
   setDateRange,
   viewMode,
@@ -341,8 +382,8 @@ function FilterBar({
   setShowPendingOnly,
   pendingCount,
 }: {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
+  templateFilter: TemplateFilter;
+  setTemplateFilter: (value: TemplateFilter) => void;
   dateRange: DateRange | undefined;
   setDateRange: (value: DateRange | undefined) => void;
   viewMode: ViewMode;
@@ -351,110 +392,167 @@ function FilterBar({
   setShowPendingOnly: (value: boolean) => void;
   pendingCount: number;
 }) {
+  const selectedTemplate =
+    TEMPLATE_OPTIONS.find((t) => t.id === templateFilter) ||
+    TEMPLATE_OPTIONS[0];
+
   return (
-    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-      {/* Search */}
-      <div className="relative flex-1 w-full sm:w-auto">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search meetings..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+    <div className="space-y-4">
+      {/* Title Row */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight">Meetings</h1>
       </div>
 
-      {/* Requires Approval Quick Filter */}
-      <Button
-        variant={showPendingOnly ? "default" : "outline"}
-        size="sm"
-        onClick={() => setShowPendingOnly(!showPendingOnly)}
-        className="shrink-0 gap-2"
-      >
-        <CircleAlert className="h-4 w-4" />
-        Requires Approval
-        {pendingCount > 0 && (
-          <span
-            className={cn(
-              "ml-1 rounded-full px-1.5 py-0.5 text-xs font-medium",
-              showPendingOnly
-                ? "bg-primary-foreground/20 text-primary-foreground"
-                : "bg-orange-500/10 text-orange-500"
-            )}
-          >
-            {pendingCount}
-          </span>
-        )}
-      </Button>
+      {/* Toolbar Row */}
+      <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
+        {/* Left Side - Template Filter Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="gap-2 px-3 py-1.5 h-auto text-sm font-medium hover:bg-muted/50 rounded-full"
+            >
+              <ListFilter className="h-4 w-4" />
+              {selectedTemplate.label}
+              <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            {TEMPLATE_OPTIONS.map((template) => (
+              <DropdownMenuItem
+                key={template.id}
+                onClick={() => setTemplateFilter(template.id)}
+                className="gap-2 cursor-pointer"
+              >
+                <span>{template.icon}</span>
+                <span>{template.label}</span>
+                {templateFilter === template.id && (
+                  <Check className="h-4 w-4 ml-auto" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      {/* Date Range Picker */}
-      <Popover>
-        <PopoverTrigger asChild>
+        {/* Right Side - Filters and Actions */}
+        <div className="flex items-center gap-1.5">
+          {/* Date Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-8 w-8",
+                  dateRange && "bg-muted text-foreground"
+                )}
+              >
+                <CalendarIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-3 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Date Range</span>
+                  {dateRange && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDateRange(undefined)}
+                      className="h-auto py-1 px-2 text-xs"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* View Mode Toggle */}
           <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "justify-start text-left font-normal min-w-[200px]",
-              !dateRange && "text-muted-foreground"
-            )}
+            variant="ghost"
+            size="icon"
+            onClick={() => setViewMode(viewMode === "list" ? "cards" : "list")}
+            className="h-8 w-8"
           >
-            <CalendarIcon className="h-4 w-4" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, "LLL dd")} -{" "}
-                  {format(dateRange.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(dateRange.from, "LLL dd, y")
-              )
+            {viewMode === "list" ? (
+              <LayoutList className="h-4 w-4" />
             ) : (
-              <span>Filter by date</span>
+              <LayoutGrid className="h-4 w-4" />
             )}
           </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={dateRange?.from}
-            selected={dateRange}
-            onSelect={setDateRange}
-            numberOfMonths={2}
-          />
-        </PopoverContent>
-      </Popover>
 
-      {/* Clear Date Range Button */}
-      {dateRange && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setDateRange(undefined)}
-          className="shrink-0 h-8 w-8"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
+          {/* Requires Approval Filter */}
+          <Button
+            variant={showPendingOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowPendingOnly(!showPendingOnly)}
+            className="h-8 gap-1.5"
+          >
+            <CircleAlert className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Approval</span>
+            {pendingCount > 0 && (
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-medium min-w-[18px]",
+                  showPendingOnly
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-orange-500 text-white"
+                )}
+              >
+                {pendingCount}
+              </span>
+            )}
+          </Button>
 
-      {/* View Mode Toggle */}
-      <div className="flex border rounded-md">
-        <Button
-          variant={viewMode === "list" ? "secondary" : "ghost"}
-          size="icon"
-          onClick={() => setViewMode("list")}
-          className="rounded-r-none h-8 w-8"
-        >
-          <LayoutList className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={viewMode === "cards" ? "secondary" : "ghost"}
-          size="icon"
-          onClick={() => setViewMode("cards")}
-          className="rounded-l-none h-8 w-8"
-        >
-          <LayoutGrid className="h-4 w-4" />
-        </Button>
+          {/* Separator */}
+          <div className="w-px h-5 bg-border mx-1" />
+
+          {/* New Meeting Button with Template Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" className="gap-1.5 h-8">
+                <Plus className="h-4 w-4" />
+                New
+                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/meeting-setup" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Blank meeting</span>
+                </Link>
+              </DropdownMenuItem>
+              {TEMPLATE_OPTIONS.filter((t) => t.id !== "all").map(
+                (template) => (
+                  <DropdownMenuItem
+                    key={template.id}
+                    asChild
+                    className="cursor-pointer"
+                  >
+                    <Link
+                      href={`/meeting-setup?template=${template.id}`}
+                      className="gap-2"
+                    >
+                      <span>{template.icon}</span>
+                      <span>{template.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
   );
@@ -502,6 +600,8 @@ function CopyLinkButton({ meetingId }: { meetingId: string }) {
 function MeetingRow({ meeting }: { meeting: Meeting }) {
   const transcriptLength = meeting.raw_transcript?.length || 0;
   const estimatedMinutes = Math.max(30, Math.min(180, transcriptLength / 500));
+  const statusInfo = getStatusInfo(meeting.status || "unknown");
+  const needsReview = statusInfo.type === "pending_review";
 
   return (
     <Link href={`/meeting/${meeting.meeting_id}`} className="block">
@@ -517,8 +617,18 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
               {formatDuration(estimatedMinutes)}
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <StatusBadge status={meeting.status || "unknown"} />
+            {needsReview && (
+              <Button
+                variant="default"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Review
+              </Button>
+            )}
             <CopyLinkButton meetingId={meeting.meeting_id} />
           </div>
         </CardContent>
@@ -530,6 +640,8 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
 function MeetingCard({ meeting }: { meeting: Meeting }) {
   const transcriptLength = meeting.raw_transcript?.length || 0;
   const estimatedMinutes = Math.max(30, Math.min(180, transcriptLength / 500));
+  const statusInfo = getStatusInfo(meeting.status || "unknown");
+  const needsReview = statusInfo.type === "pending_review";
 
   return (
     <Link href={`/meeting/${meeting.meeting_id}`} className="block h-full">
@@ -537,7 +649,19 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
         <CardContent className="p-5 flex flex-col h-full">
           <div className="flex items-start justify-between gap-3">
             <StatusBadge status={meeting.status || "unknown"} />
-            <CopyLinkButton meetingId={meeting.meeting_id} />
+            <div className="flex items-center gap-2">
+              {needsReview && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Review
+                </Button>
+              )}
+              <CopyLinkButton meetingId={meeting.meeting_id} />
+            </div>
           </div>
           <div className="mt-4 flex-1">
             <h3 className="font-semibold text-lg line-clamp-2 leading-tight">
@@ -563,7 +687,7 @@ export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showPendingOnly, setShowPendingOnly] = useState(false);
@@ -607,15 +731,8 @@ export default function MeetingsPage() {
 
   const filteredMeetings = useMemo(() => {
     return meetings.filter((meeting) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const name = (meeting.meeting_name || "").toLowerCase();
-        const url = (meeting.meeting_url || "").toLowerCase();
-        if (!name.includes(query) && !url.includes(query)) {
-          return false;
-        }
-      }
+      // Template filter (placeholder - meetings don't have template field yet)
+      // When template field is added, filter here based on templateFilter
 
       // Pending approval filter
       if (showPendingOnly) {
@@ -641,7 +758,7 @@ export default function MeetingsPage() {
 
       return true;
     });
-  }, [meetings, searchQuery, dateRange, showPendingOnly]);
+  }, [meetings, templateFilter, dateRange, showPendingOnly]);
 
   if (loading) {
     return (
@@ -673,28 +790,12 @@ export default function MeetingsPage() {
     );
   }
 
-  const stats = calculateStats(meetings);
-
   return (
     <div className="py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Meetings</h1>
-        <Link href="/meeting-setup">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Meeting
-          </Button>
-        </Link>
-      </div>
-
-      {/* Stats Bar */}
-      <StatsBar stats={stats} meetings={meetings} />
-
-      {/* Filter Bar */}
-      <FilterBar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+      {/* Database Header */}
+      <DatabaseHeader
+        templateFilter={templateFilter}
+        setTemplateFilter={setTemplateFilter}
         dateRange={dateRange}
         setDateRange={setDateRange}
         viewMode={viewMode}
@@ -704,34 +805,49 @@ export default function MeetingsPage() {
         pendingCount={pendingCount}
       />
 
+      {/* Usage Stats */}
+      <UsageStatsBar meetings={meetings} />
+
       {/* Meeting List/Grid */}
       {filteredMeetings.length > 0 ? (
-        viewMode === "list" ? (
-          <div className="flex flex-col gap-4">
-            {filteredMeetings.map((meeting) => (
-              <MeetingRow key={meeting.meeting_id} meeting={meeting} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredMeetings.map((meeting) => (
-              <MeetingCard key={meeting.meeting_id} meeting={meeting} />
-            ))}
-          </div>
-        )
+        <div className="space-y-6">
+          {groupMeetingsByDate(filteredMeetings).map(
+            ({ group, meetings: groupMeetings }) => (
+              <div key={group}>
+                {/* Date Group Header */}
+                <h2 className="text-sm font-medium text-muted-foreground mb-3 sticky top-0 bg-background py-2">
+                  {DATE_GROUP_LABELS[group]}
+                </h2>
+                {viewMode === "list" ? (
+                  <div className="flex flex-col gap-3">
+                    {groupMeetings.map((meeting) => (
+                      <MeetingRow key={meeting.meeting_id} meeting={meeting} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {groupMeetings.map((meeting) => (
+                      <MeetingCard key={meeting.meeting_id} meeting={meeting} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </div>
       ) : meetings.length > 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <SlidersHorizontal className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold">No meetings found</h2>
             <p className="text-muted-foreground mt-2">
-              Try adjusting your search or filters.
+              Try adjusting your filters.
             </p>
             <Button
               variant="outline"
               className="mt-4"
               onClick={() => {
-                setSearchQuery("");
+                setTemplateFilter("all");
                 setDateRange(undefined);
                 setShowPendingOnly(false);
               }}
