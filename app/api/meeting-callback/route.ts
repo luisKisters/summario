@@ -143,7 +143,9 @@ async function set_transcript(bot_id: string, meeting_id: string) {
     const { error: updateError } = await supabase
       .from("meetings")
       .update({
-        raw_transcript: skribbyBot.transcript,
+        // `raw_transcript` is stored as a string in our DB schema.
+        // Skribby returns an array of segments, so we persist it as JSON.
+        raw_transcript: JSON.stringify(skribbyBot.transcript),
         status: "DONE",
         participants: participants,
       })

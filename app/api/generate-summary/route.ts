@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { GoogleGenAI, Type } from "@google/genai";
 import { Tables } from "@/types/database.types";
-import { formatTranscriptForDisplay } from "../../../lib/utils";
+import { formatTranscriptForDisplay } from "@/lib/utils";
 
 interface GenerateSummaryRequest {
   meeting_id: string;
@@ -117,9 +117,7 @@ export async function POST(request: NextRequest) {
     const agendaForPrompt = meeting.agenda_topics;
 
     const transcript_parsed = meeting.enable_diarization
-      ? formatTranscriptForDisplay(
-          JSON.parse(meeting.raw_transcript || "[]")
-        ).join("\n")
+      ? formatTranscriptForDisplay(meeting.raw_transcript ?? "[]").join("\n")
       : meeting.raw_transcript;
 
     // Format participants for better AI processing
