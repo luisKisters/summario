@@ -4,10 +4,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Tables } from "@/types/database.types";
 import { formatTranscriptForDisplay } from "@/lib/utils";
 
-interface GenerateSummaryRequest {
-  meeting_id: string;
-}
-
 const SYSTEM_PROMPT = `
 You are an expert AI assistant specialized in generating professional meeting minutes from transcripts. Your task is to analyze meeting transcripts and create structured, accurate minutes that match the user's preferred style and format.
 
@@ -23,9 +19,9 @@ You are an expert AI assistant specialized in generating professional meeting mi
 
 3. **Participants Handling:**
    - If the minutes template includes a participants section, you MUST list ALL participants provided in the participants data.
-   - Match names from the transcript to the correct participant names provided. For example, if the transcript has "louis" but the participants list has "Luis", use "Luis" in the minutes.
+   - Strictly use the names from **MEETING PARTICIPANTS:** list,
+    - example: If the transcript mentions "Marcus" but there is a participant named "Markus", use "Markus" in the minutes and participants list.
    - Exclude any bots or automated speakers from the participants list.
-   - Only include human participants who were actually present in the meeting.
 
 4. **Minutes Generation Rules:**
    - Strictly follow the user's example minutes style and formatting.
@@ -44,7 +40,7 @@ export async function POST(request: NextRequest) {
   let meeting_id: string | undefined;
 
   try {
-    const body: GenerateSummaryRequest = await request.json();
+    const body = await request.json();
     meeting_id = body.meeting_id;
 
     if (!meeting_id) {
@@ -56,7 +52,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = getAdminClient();
 
-    // Fetch the specific meeting record
     const { data: meeting, error: meetingError } = await supabase
       .from("meetings")
       .select("*")
@@ -71,17 +66,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!meeting.raw_transcript || meeting.status != "DONE") {
+    if (!meeting.raw_transcript) {
       return NextResponse.json(
         {
           success: false,
-          message: 'Transcript not available or status is not "DONE"',
+          message: "Transcript not available",
         },
         { status: 400 }
       );
     }
 
-    // Fetch the associated user record
     const { data: user, error: userError } = await supabase
       .from("users")
       .select("ai_generated_prompt, ai_generated_template, example_protocol")
@@ -108,19 +102,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize Google Gemini API client
     const ai = new GoogleGenAI({
       apiKey: process.env.GOOGLE_GEMINI_API_KEY!,
     });
 
-    // Prepare agenda topics for the prompt
     const agendaForPrompt = meeting.agenda_topics;
 
     const transcript_parsed = meeting.enable_diarization
       ? formatTranscriptForDisplay(meeting.raw_transcript ?? "[]").join("\n")
       : meeting.raw_transcript;
 
-    // Format participants for better AI processing
     const participants = Array.isArray(meeting.participants)
       ? meeting.participants
       : JSON.parse(
@@ -165,7 +156,7 @@ ${user.example_protocol}
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        temperature: 0.2,
+        temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
