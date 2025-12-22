@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { Tables, TablesUpdate } from "@/types/database.types";
+import { SupabaseClient } from "@supabase/supabase-js";
 
-// Add message for FAILED status
 interface SkribbyWebhookPayload {
   bot_id?: string;
   type?: string; // e.g., "status_update"
@@ -30,17 +30,50 @@ function mapSkribbyStatusToMeetingStatus(
   return undefined;
 }
 
+async function throwError(
+  message: string,
+  status: number,
+  supabase: SupabaseClient,
+  meeting_id?: string,
+  skribbyBotId?: string
+) {
+  if (skribbyBotId) {
+    const { error: updateError } = await supabase
+      .from("meetings")
+      .select("meeting_id")
+      .eq("skribby_bot_id", skribbyBotId)
+      .single<Pick<Tables<"meetings">, "meeting_id">>();
+
+    if (updateError) {
+      console.error(
+        "Error finding meeting by skribby_bot_id for error logging:",
+        skribbyBotId,
+        updateError
+      );
+    } else if (meeting_id) {
+      const { error: supabaseError } = await supabase
+        .from("meetings")
+        .update({ status: "FAILED", error_message: message })
+        .eq("meeting_id", meeting_id);
+
+      if (supabaseError) {
+        console.error("Error updating meeting status:", supabaseError);
+      }
+    }
+  }
+
+  console.error("Error:", message);
+  return NextResponse.json({ error: message }, { status });
+}
+
 export async function POST(request: NextRequest) {
-  // Always acknowledge quickly per PRD
   try {
     const payload = (await request.json()) as SkribbyWebhookPayload;
     const skribbyBotId = payload?.bot_id;
 
     if (!skribbyBotId) {
-      return NextResponse.json(
-        { status: "received", note: "missing bot_id" },
-        { status: 200 }
-      );
+      await throwError("missing bot_id", 400, getAdminClient(), "");
+      return;
     }
 
     const supabase = getAdminClient();
@@ -57,35 +90,24 @@ export async function POST(request: NextRequest) {
         skribbyBotId,
         findError
       );
-      return NextResponse.json(
-        {
-          status: "received",
-          note: "meeting not found or db error",
-        },
-        { status: 200 }
-      );
+      await throwError("meeting not found or db error", 404, supabase, "");
+      return;
     }
 
     const newStatusRaw = payload?.data?.new_status;
     const mappedStatus = mapSkribbyStatusToMeetingStatus(newStatusRaw);
 
     if (!mappedStatus) {
-      return NextResponse.json({
-        status: "received",
-        note: "unhandled status",
-      });
+      return NextResponse.json({ error: "unhandled status" }, { status: 500 });
     }
 
     if (mappedStatus === "DONE") {
-      // set_transcript will update status to DONE or FAILED
-      await set_transcript(skribbyBotId, meeting.meeting_id);
+      await fetchAndSaveTranscript(skribbyBotId, meeting.meeting_id);
     } else {
-      // For JOINING, RECORDING, PROCESSING, FAILED
       const updateQuery: TablesUpdate<"meetings"> = { status: mappedStatus };
 
-      // On failure-like statuses, store error message if present
       if (mappedStatus === "FAILED" && payload.message) {
-        updateQuery.error_message = payload.message;
+        updateQuery.error_message = payload.message; // Log Skribby error message in db
       }
 
       const { error: supabaseError } = await supabase
@@ -95,7 +117,6 @@ export async function POST(request: NextRequest) {
 
       if (supabaseError) {
         console.error("Error updating meeting status:", supabaseError);
-        // Don't return error to Skribby, just log it.
       }
     }
 
@@ -110,7 +131,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function set_transcript(bot_id: string, meeting_id: string) {
+async function fetchAndSaveTranscript(bot_id: string, meeting_id: string) {
   const supabase = getAdminClient();
   try {
     const skribbyResponse = await fetch(
@@ -126,11 +147,19 @@ async function set_transcript(bot_id: string, meeting_id: string) {
     const skribbyBot = await skribbyResponse.json();
 
     if (!skribbyResponse.ok) {
-      throw new Error(skribbyBot.message || skribbyResponse.statusText);
+      return NextResponse.json(
+        {
+          error: `Failed to fetch Skribby bot data: ${skribbyResponse.status} ${skribbyResponse.statusText}`,
+        },
+        { status: 500 }
+      );
     }
 
     if (!skribbyBot.transcript || !skribbyBot.participants?.length) {
-      throw new Error("Skribby bot transcript or participants not found.");
+      return NextResponse.json(
+        { error: "Incomplete data from Skribby" },
+        { status: 500 }
+      );
     }
 
     const participants = skribbyBot.participants.map(
@@ -152,10 +181,14 @@ async function set_transcript(bot_id: string, meeting_id: string) {
       .eq("skribby_bot_id", bot_id);
 
     if (updateError) {
-      throw updateError;
+      return NextResponse.json(
+        {
+          error: `Failed to update meeting with transcript: ${updateError.message}`,
+        },
+        { status: 500 }
+      );
     }
 
-    // If transcript is saved, trigger summary generation
     const summaryUrl = `${
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     }/api/generate-summary`;
@@ -177,14 +210,14 @@ async function set_transcript(bot_id: string, meeting_id: string) {
         errorMessage = errorText || `HTTP ${generateSummaryResponse.status}`;
       }
 
-      throw new Error(`Failed to trigger summary generation: ${errorMessage}`);
+      return;
     }
   } catch (error) {
-    console.error("Error in set_transcript:", error);
+    console.error("Error in save_and_fetch_transcript:", error);
     const errorMessage =
       error instanceof Error
         ? error.message
-        : "Unknown error in set_transcript";
+        : "Unknown error in save_and_fetch_transcript";
     const { error: dbError } = await supabase
       .from("meetings")
       .update({
