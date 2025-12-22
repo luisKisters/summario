@@ -162,9 +162,10 @@ ${user.example_protocol}
 
     // Make the API call to Gemini with structured output
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
+        temperature: 0.2,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
