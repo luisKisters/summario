@@ -4,46 +4,46 @@ import { GenerateTemplateRequest, GenerateTemplateResponse } from "@/types";
 
 // Initialize Gemini AI client
 const ai = new GoogleGenAI({
-	apiKey: process.env.GOOGLE_GEMINI_API_KEY!,
+  apiKey: process.env.GOOGLE_GEMINI_API_KEY!,
 });
 
 export async function POST(request: NextRequest) {
-	try {
-		const body: GenerateTemplateRequest = await request.json();
-		const { example_protocol, user_instructions } = body;
+  try {
+    const body: GenerateTemplateRequest = await request.json();
+    const { example_protocol, user_instructions } = body;
 
-		if (!example_protocol || typeof example_protocol !== "string") {
-			return NextResponse.json(
-				{ error: "example_protocol is required and must be a string" },
-				{ status: 400 }
-			);
-		}
+    if (!example_protocol || typeof example_protocol !== "string") {
+      return NextResponse.json(
+        { error: "example_protocol is required and must be a string" },
+        { status: 400 }
+      );
+    }
 
-		if (!process.env.GOOGLE_GEMINI_API_KEY) {
-			return NextResponse.json(
-				{ error: "Gemini API key not configured" },
-				{ status: 500 }
-			);
-		}
+    if (!process.env.GOOGLE_GEMINI_API_KEY) {
+      return NextResponse.json(
+        { error: "Gemini API key not configured" },
+        { status: 500 }
+      );
+    }
 
-		// Construct the meta-prompt for Gemini to act as a prompt engineer
-		let metaPrompt = `You are a world-class prompt engineering system. Your mission is to deconstruct a user-provided example of meeting minutes and generate a high-fidelity, reusable AI configuration (a system prompt and a template) from it. This configuration will be used by another AI to generate future minutes in the exact same style.
+    // Construct the meta-prompt for Gemini to act as a prompt engineer
+    let metaPrompt = `You are a world-class prompt engineering system. Your mission is to deconstruct a user-provided example of meeting minutes and generate a high-fidelity, reusable AI configuration (a system prompt and a template) from it. This configuration will be used by another AI to generate future minutes in the exact same style.
 
   ---
   **INPUT MINUTES EXAMPLE:**
   ${example_protocol}
   ---`;
 
-		// Add user instructions if provided
-		if (user_instructions && user_instructions.trim()) {
-			metaPrompt += `
+    // Add user instructions if provided
+    if (user_instructions && user_instructions.trim()) {
+      metaPrompt += `
   ---
   **ADDITIONAL USER INSTRUCTIONS:**
   ${user_instructions.trim()}
   ---`;
-		}
+    }
 
-		metaPrompt += `
+    metaPrompt += `
 
   Your task is to follow this two-step process meticulously:
 
@@ -85,72 +85,72 @@ export async function POST(request: NextRequest) {
   }
   \`\`\`
   `;
-		// Generate content using Gemini
-		const response = await ai.models.generateContent({
-			model: "gemini-2.5-flash",
-			contents: metaPrompt,
-			config: {
-				responseMimeType: "application/json",
-				responseSchema: {
-					type: Type.OBJECT,
-					properties: {
-						ai_generated_prompt: {
-							type: Type.STRING,
-						},
-						ai_generated_template: {
-							type: Type.STRING,
-						},
-					},
-				},
-			},
-		});
+    // Generate content using Gemini
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: metaPrompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            ai_generated_prompt: {
+              type: Type.STRING,
+            },
+            ai_generated_template: {
+              type: Type.STRING,
+            },
+          },
+        },
+      },
+    });
 
-		const text = response.text;
+    const text = response.text;
 
-		if (!text) {
-			throw new Error("No response text received from Gemini");
-		}
+    if (!text) {
+      throw new Error("No response text received from Gemini");
+    }
 
-		// Try to parse the JSON response
-		let parsedResponse: Partial<GenerateTemplateResponse>;
-		try {
-			// Extract JSON from the response (in case there's extra text)
-			const jsonMatch = text.match(/\{[\s\S]*\}/);
-			if (!jsonMatch) {
-				throw new Error("No JSON found in response");
-			}
-			parsedResponse = JSON.parse(jsonMatch[0]);
-		} catch (parseError) {
-			console.error("Failed to parse Gemini response:", parseError);
-			console.error("Raw response:", text);
-			return NextResponse.json(
-				{ error: "Failed to parse AI response" },
-				{ status: 500 }
-			);
-		}
+    // Try to parse the JSON response
+    let parsedResponse: Partial<GenerateTemplateResponse>;
+    try {
+      // Extract JSON from the response (in case there's extra text)
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response");
+      }
+      parsedResponse = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response:", parseError);
+      console.error("Raw response:", text);
+      return NextResponse.json(
+        { error: "Failed to parse AI response" },
+        { status: 500 }
+      );
+    }
 
-		// Validate the response structure
-		if (
-			!parsedResponse.ai_generated_prompt ||
-			!parsedResponse.ai_generated_template
-		) {
-			return NextResponse.json(
-				{ error: "Invalid AI response structure" },
-				{ status: 500 }
-			);
-		}
+    // Validate the response structure
+    if (
+      !parsedResponse.ai_generated_prompt ||
+      !parsedResponse.ai_generated_template
+    ) {
+      return NextResponse.json(
+        { error: "Invalid AI response structure" },
+        { status: 500 }
+      );
+    }
 
-		const responseData: GenerateTemplateResponse = {
-			ai_generated_prompt: parsedResponse.ai_generated_prompt,
-			ai_generated_template: parsedResponse.ai_generated_template,
-		};
+    const responseData: GenerateTemplateResponse = {
+      ai_generated_prompt: parsedResponse.ai_generated_prompt,
+      ai_generated_template: parsedResponse.ai_generated_template,
+    };
 
-		return NextResponse.json(responseData);
-	} catch (error) {
-		console.error("Error in generate-template API:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 }
-		);
-	}
+    return NextResponse.json(responseData);
+  } catch (error) {
+    console.error("Error in generate-template API:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }

@@ -2,21 +2,21 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-	const { current_content, edit_instruction } = await request.json();
+  const { current_content, edit_instruction } = await request.json();
 
-	if (!current_content || !edit_instruction) {
-		return NextResponse.json(
-			{ error: "Missing current_content or edit_instruction" },
-			{ status: 400 }
-		);
-	}
+  if (!current_content || !edit_instruction) {
+    return NextResponse.json(
+      { error: "Missing current_content or edit_instruction" },
+      { status: 400 }
+    );
+  }
 
-	try {
-		const ai = new GoogleGenAI({
-			apiKey: process.env.GOOGLE_GEMINI_API_KEY!,
-		});
+  try {
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GOOGLE_GEMINI_API_KEY!,
+    });
 
-		const prompt = `
+    const prompt = `
 You are an expert at editing meeting minutes. Your task is to apply the user's edit instruction to the provided markdown content.
 
 **CRITICAL INSTRUCTIONS - READ AND FOLLOW THESE EXACTLY:**
@@ -52,18 +52,18 @@ Please apply this edit instruction to the minutes content following the critical
 Return ONLY the updated markdown content, nothing else. Do not include any explanations or additional text.
 `;
 
-		const response = await ai.models.generateContent({
-			model: "gemini-2.5-flash",
-			contents: prompt,
-		});
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+    });
 
-		const updatedContent = response.text?.trim() || "";
-		return NextResponse.json({ updated_content: updatedContent });
-	} catch (error) {
-		console.error("Error applying AI edit:", error);
-		return NextResponse.json(
-			{ error: "Failed to apply AI edit" },
-			{ status: 500 }
-		);
-	}
+    const updatedContent = response.text?.trim() || "";
+    return NextResponse.json({ updated_content: updatedContent });
+  } catch (error) {
+    console.error("Error applying AI edit:", error);
+    return NextResponse.json(
+      { error: "Failed to apply AI edit" },
+      { status: 500 }
+    );
+  }
 }
